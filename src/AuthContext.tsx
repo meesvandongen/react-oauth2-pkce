@@ -179,36 +179,54 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 	}
 
 	function handleExpiredRefreshToken(initial = false): void {
-		if (config.autoLogin && initial)
+		if (config.autoLogin && initial) {
 			return logIn(undefined, undefined, config.loginMethod);
+		}
 
 		// TODO: Breaking change - remove automatic login during ongoing session
-		if (!config.onRefreshTokenExpire)
+		if (!config.onRefreshTokenExpire) {
 			return logIn(undefined, undefined, config.loginMethod);
+		}
 
-		config.onRefreshTokenExpire({
+		config.onRefreshTokenExpire?.({
 			login: logIn,
 			logIn,
 		} as TRefreshTokenExpiredEvent);
 	}
 
 	function refreshAccessToken(initial = false): void {
-		if (!token) return;
+		console.log("Checking if access token needs refresh...");
+		if (!token) {
+			console.warn("No token available to refresh.");
+			return;
+		}
 		// The token has not expired. Do nothing
-		if (!epochTimeIsPast(tokenExpire)) return;
+		if (!epochTimeIsPast(tokenExpire)) {
+			console.log("Token not expired yet, no refresh needed.");
+			return;
+		}
 
 		// Other instance (tab) is currently refreshing. This instance skip the refresh if not initial
-		if (refreshInProgress && !initial) return;
+		if (refreshInProgress && !initial) {
+			console.log("Another tab is refreshing the token. Skipping refresh.");
+			return;
+		}
 
 		// If no refreshToken, act as if the refreshToken expired (session expired)
-		if (!refreshToken) return handleExpiredRefreshToken(initial);
+		if (!refreshToken) {
+			console.log("No refresh token available.");
+			return handleExpiredRefreshToken(initial);
+		}
 
 		// The refreshToken has expired
-		if (refreshTokenExpire && epochTimeIsPast(refreshTokenExpire))
+		if (refreshTokenExpire && epochTimeIsPast(refreshTokenExpire)) {
+			console.log("Refresh token has expired.");
 			return handleExpiredRefreshToken(initial);
+		}
 
 		// The access_token has expired, and we have a non-expired refresh_token. Use it to refresh access_token.
 		if (refreshToken) {
+			console.log("Refreshing access token using refresh token.");
 			setRefreshInProgress(true);
 			fetchWithRefreshToken({ config, refreshToken })
 				.then((result: TTokenResponse) => handleTokenResponse(result))
@@ -222,13 +240,17 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 						// Unknown error. Set error, and log in if first page load
 						console.error(error);
 						setError(error.message);
-						if (initial) logIn(undefined, undefined, config.loginMethod);
+						if (initial) {
+							logIn(undefined, undefined, config.loginMethod);
+						}
 					}
 					// Unknown error. Set error, and log in if first page load
 					else if (error instanceof Error) {
 						console.error(error);
 						setError(error.message);
-						if (initial) logIn(undefined, undefined, config.loginMethod);
+						if (initial) {
+							logIn(undefined, undefined, config.loginMethod);
+						}
 					}
 				})
 				.finally(() => {
@@ -311,8 +333,9 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 		}
 
 		// First page visit
-		if (!token && config.autoLogin)
+		if (!token && config.autoLogin) {
 			return logIn(undefined, undefined, config.loginMethod);
+		}
 		refreshAccessToken(true); // Check if token should be updated
 	}, []);
 

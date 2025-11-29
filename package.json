@@ -5,13 +5,23 @@
     "start": "vite",
     "build": "vite build",
     "test": "jest --silent",
-    "test:watch": "jest --silent --watch"
+    "test:watch": "jest --silent --watch",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headless": "playwright test",
+    "test:e2e": "playwright test --reporter=list",
+    "test:e2e:debug": "playwright test --debug",
+    "playwright:install": "playwright install chromium",
+    "e2e:docker:up": "docker compose -f e2e/docker-compose.yaml up -d",
+    "e2e:docker:down": "docker compose -f e2e/docker-compose.yaml down",
+    "e2e:docker:logs": "docker compose -f e2e/docker-compose.yaml logs -f"
   },
   "dependencies": {
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
+    "@playwright/test": "^1.49.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",

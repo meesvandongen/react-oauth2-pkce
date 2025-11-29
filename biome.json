@@ -1,20 +1,9 @@
 {
   "javascript": {
-    "formatter": {
-      "indentStyle": "space",
-      "indentWidth": 2,
-      "jsxQuoteStyle": "single",
-      "quoteStyle": "single",
-      "trailingCommas": "es5",
-      "lineWidth": 119,
-      "semicolons": "asNeeded"
-    }
+    "formatter": {}
   },
   "json": {
-    "formatter": {
-      "indentStyle": "space",
-      "indentWidth": 2
-    }
+    "formatter": {}
   },
   "linter": {
     "rules": {

@@ -169,7 +169,13 @@ export function validateState(urlParams: URLSearchParams, storageType: TInternal
   const storage = storageType === 'session' ? sessionStorage : localStorage
   const receivedState = urlParams.get('state')
   const loadedState = storage.getItem(stateStorageKey)
-  if (receivedState !== loadedState) {
+
+  // Normalize empty/null states for comparison
+  // OAuth servers may return state="" when no state was sent, while storage returns null
+  const normalizedReceivedState = receivedState || null
+  const normalizedLoadedState = loadedState || null
+
+  if (normalizedReceivedState !== normalizedLoadedState) {
     throw new Error(
       '"state" value received from authentication server does no match client request. Possible cross-site request forgery'
     )
