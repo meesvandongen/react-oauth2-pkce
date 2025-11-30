@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
 	AuthContext,
 	AuthProvider,
@@ -6,40 +6,62 @@ import {
 	type TAuthConfig,
 } from "react-oauth2-code-pkce";
 
-// Track callback invocations for testing
-declare global {
-	interface Window {
-		preLoginCalled: boolean;
-		postLoginCalled: boolean;
-		preLoginTimestamp: number;
-		postLoginTimestamp: number;
-	}
+const PRELOGIN_STORAGE_KEY = "prepost_test_preLoginCalled";
+
+export function PrePostLoginAuth() {
+	const [preLoginStatus, setPreLoginStatus] = useState("not-called");
+	const [postLoginStatus, setPostLoginStatus] = useState("not-called");
+
+	// Restore callback status from sessionStorage on mount
+	useEffect(() => {
+		const preLoginCalled = sessionStorage.getItem(PRELOGIN_STORAGE_KEY);
+
+		if (preLoginCalled === "true") {
+			setPreLoginStatus("called");
+		}
+	}, []);
+
+	const handlePreLogin = useCallback(() => {
+		// Persist to sessionStorage so it survives navigation
+		sessionStorage.setItem(PRELOGIN_STORAGE_KEY, "true");
+		setPreLoginStatus("called");
+	}, []);
+
+	const handlePostLogin = useCallback(() => {
+		setPostLoginStatus("called");
+	}, []);
+
+	const authConfig: TAuthConfig = {
+		clientId: "test-app",
+		authorizationEndpoint: "http://localhost:5556/dex/auth",
+		tokenEndpoint: "http://localhost:5556/dex/token",
+		redirectUri: "http://localhost:3010/prepostlogin/",
+		scope: "openid profile email offline_access",
+		decodeToken: true,
+		autoLogin: false,
+		clearURL: true,
+		storage: "session",
+		storageKeyPrefix: "prepost_",
+		preLogin: handlePreLogin,
+		postLogin: handlePostLogin,
+	};
+
+	return (
+		<AuthProvider authConfig={authConfig}>
+			<AuthStatus
+				preLoginStatus={preLoginStatus}
+				postLoginStatus={postLoginStatus}
+			/>
+		</AuthProvider>
+	);
 }
-window.preLoginCalled = false;
-window.postLoginCalled = false;
-window.preLoginTimestamp = 0;
-window.postLoginTimestamp = 0;
 
-const authConfig: TAuthConfig = {
-	clientId: "test-app",
-	authorizationEndpoint: "http://localhost:5556/dex/auth",
-	tokenEndpoint: "http://localhost:5556/dex/token",
-	redirectUri: "http://localhost:3010/prepostlogin/",
-	scope: "openid profile email offline_access",
-	decodeToken: true,
-	autoLogin: false,
-	clearURL: true,
-	storage: "session",
-	storageKeyPrefix: "prepost_",
-	preLogin: () => {
-		console.log("preLogin callback invoked");
-	},
-	postLogin: () => {
-		console.log("postLogin callback invoked");
-	},
-};
+interface AuthStatusProps {
+	preLoginStatus: string;
+	postLoginStatus: string;
+}
 
-function AuthStatus() {
+function AuthStatus({ preLoginStatus, postLoginStatus }: AuthStatusProps) {
 	const {
 		token,
 		tokenData,
@@ -48,10 +70,6 @@ function AuthStatus() {
 		error,
 		loginInProgress,
 	}: IAuthContext = useContext(AuthContext);
-	const [callbackStatus, _setCallbackStatus] = useState({
-		preLogin: sessionStorage.getItem("preLoginCalled") === "true",
-		postLogin: sessionStorage.getItem("postLoginCalled") === "true",
-	});
 
 	return (
 		<div>
@@ -79,12 +97,6 @@ function AuthStatus() {
 				<button onClick={() => logOut()} data-testid="logout-button">
 					Log Out
 				</button>
-				<button onClick={refreshStatus} data-testid="refresh-status">
-					Refresh Status
-				</button>
-				<button onClick={clearCallbackStatus} data-testid="clear-status">
-					Clear Callback Status
-				</button>
 			</div>
 
 			{/* Callback status */}
@@ -92,15 +104,11 @@ function AuthStatus() {
 				<h3>Callback Status</h3>
 				<div>
 					<span>preLogin: </span>
-					<span data-testid="prelogin-status">
-						{callbackStatus.preLogin ? "called" : "not-called"}
-					</span>
+					<span data-testid="prelogin-status">{preLoginStatus}</span>
 				</div>
 				<div>
 					<span>postLogin: </span>
-					<span data-testid="postlogin-status">
-						{callbackStatus.postLogin ? "called" : "not-called"}
-					</span>
+					<span data-testid="postlogin-status">{postLoginStatus}</span>
 				</div>
 			</div>
 
@@ -113,13 +121,5 @@ function AuthStatus() {
 				</div>
 			)}
 		</div>
-	);
-}
-
-export function PrePostLoginAuth() {
-	return (
-		<AuthProvider authConfig={authConfig}>
-			<AuthStatus />
-		</AuthProvider>
 	);
 }

@@ -310,8 +310,10 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 					.then((tokens: TTokenResponse) => {
 						handleTokenResponse(tokens);
 						// Call any postLogin function in authConfig
-						if (config?.postLogin) config.postLogin();
-						if (loginMethod === "popup") window.close();
+						config.postLogin?.();
+						if (loginMethod === "popup") {
+							window.close();
+						}
 					})
 					.catch((error: Error) => {
 						console.error(error);
