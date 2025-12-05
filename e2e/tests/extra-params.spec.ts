@@ -1,85 +1,62 @@
-import { expect, test } from "@playwright/test";
-import { performDexLogin, waitForAuthenticated } from "./helpers";
+import type { Page } from "@playwright/test";
+import { HttpResponse, http } from "msw";
+import { expect, test } from "../playwright.setup";
+import { expectAuthenticated, login } from "./helpers";
 
-test.describe("Extra Parameters Feature", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/extraparams");
-	});
+test.beforeEach(async ({ page }) => {
+	await page.goto("/extraparams");
+});
 
-	test("should display configured extra parameters", async ({ page }) => {
-		const configParams = await page
-			.locator('[data-testid="config-params"]')
-			.textContent();
-		const config = JSON.parse(configParams!);
+async function parseTokenData(page: Page) {
+	const tokenText = await page.getByTestId("token-data").textContent();
+	return JSON.parse(tokenText || "{}");
+}
 
-		expect(config.extraAuthParameters).toEqual({
-			prompt: "consent",
-			custom_auth_param: "auth_value",
-		});
-		expect(config.extraTokenParameters).toEqual({
-			custom_token_param: "token_value",
-		});
-		expect(config.extraLogoutParameters).toEqual({
-			custom_logout_param: "logout_value",
-		});
-	});
+test("includes extra /auth param from config", async ({ page }) => {
+	await login(page);
+	await expectAuthenticated(page);
 
-	test("should include extra auth parameters in authorization URL", async ({
-		page,
-	}) => {
-		// Set up request interception to capture the auth URL
-		let authUrl = "";
-		await page.route("**/dex/auth**", async (route) => {
-			authUrl = route.request().url();
-			await route.continue();
-		});
+	const parsedTokenData = await parseTokenData(page);
+	expect(parsedTokenData.authParameters.custom_auth_param).toBe(
+		"custom_auth_param",
+	);
+});
 
-		await page.click('[data-testid="login-button"]');
+test("includes extra /token param from config", async ({ page }) => {
+	await login(page);
+	await expectAuthenticated(page);
 
-		// Wait for navigation to Dex
-		await page.waitForURL(/.*localhost:5556\/dex.*/);
+	const parsedTokenData = await parseTokenData(page);
+	expect(parsedTokenData.tokenParams.custom_token_param).toBe(
+		"custom_token_param",
+	);
+});
 
-		// Check that extra auth parameters are in the URL
-		expect(authUrl).toContain("prompt=consent");
-		expect(authUrl).toContain("custom_auth_param=auth_value");
+test("includes extra /logout param from config", async ({ page, network }) => {
+	network.use(
+		http.get(`**/logout`, ({ request }) => {
+			const url = new URL(request.url);
 
-		// Complete login
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-	});
+			return HttpResponse.text(url.searchParams.get("custom_logout_param"));
+		}),
+	);
+	await login(page);
+	await expectAuthenticated(page);
 
-	test("should include runtime additional parameters in authorization URL", async ({
-		page,
-	}) => {
-		let authUrl = "";
-		await page.route("**/dex/auth**", async (route) => {
-			authUrl = route.request().url();
-			await route.continue();
-		});
+	await page.getByTestId("logout-button").click();
 
-		// Set login hint
-		await page.fill('[data-testid="login-hint-input"]', "test@example.com");
+	await expect(page.getByText("custom_logout_param")).toBeVisible();
+});
 
-		await page.click('[data-testid="login-additional-params"]');
+test("includes extra param added from button", async ({ page, network }) => {
+	await page.getByTestId("login-extra-param-button").click();
+	await expectAuthenticated(page);
 
-		await page.waitForURL(/.*localhost:5556\/dex.*/);
-
-		// Check that both config and runtime params are in URL
-		expect(authUrl).toContain("prompt=consent");
-		expect(authUrl).toContain("login_hint=test%40example.com");
-
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-	});
-
-	test("should successfully authenticate with extra parameters", async ({
-		page,
-	}) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// Verify token data is present
-		await expect(page.locator('[data-testid="token-data"]')).toBeVisible();
-	});
+	const parsedTokenData = await parseTokenData(page);
+	expect(parsedTokenData.authParameters.custom_button_param).toBe(
+		"extra-param-from-button",
+	);
+	expect(parsedTokenData.authParameters.custom_auth_param).toBe(
+		"custom_auth_param",
+	);
 });

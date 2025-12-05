@@ -31,7 +31,7 @@ export async function redirectToLogin(
 	storage.setItem(codeVerifierStorageKeyName, codeVerifier);
 
 	// Hash and Base64URL encode the code_verifier, used as the 'code_challenge'
-	return generateCodeChallenge(codeVerifier).then((codeChallenge) => {
+	return generateCodeChallenge(codeVerifier).then(async (codeChallenge) => {
 		// Set query parameters and redirect user to OAuth2 authentication endpoint
 		const params = new URLSearchParams({
 			response_type: "code",

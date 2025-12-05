@@ -1,124 +1,61 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../playwright.setup";
 import {
-	performDexLogin,
-	waitForAuthenticated,
-	waitForNotAuthenticated,
+	expectAuthenticated,
+	expectNotAuthenticated,
+	login,
+	logout,
 } from "./helpers";
 
-test.describe("Basic Authentication Flow", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/basic");
-	});
+test.beforeEach(async ({ page }) => {
+	await page.goto("/basic");
+});
 
-	test("should show not authenticated state initially", async ({ page }) => {
-		await waitForNotAuthenticated(page);
-		await expect(page.locator('[data-testid="login-button"]')).toBeVisible();
-		await expect(page.locator('[data-testid="logout-button"]')).toBeVisible();
-	});
+test("shows not authenticated initially", async ({ page }) => {
+	await expectNotAuthenticated(page);
+});
 
-	test("should perform OAuth2 PKCE login flow with redirect", async ({
-		page,
-	}) => {
-		// Click login button
-		await page.click('[data-testid="login-button"]');
+test("can log in with redirect", async ({ page }) => {
+	await page.getByTestId("login-button").click();
+	await expectAuthenticated(page);
+});
 
-		// Perform Dex login
-		await performDexLogin(page);
+test("can log in with replace navigation", async ({ page }) => {
+	await page.getByTestId("login-replace-button").click();
+	await expectAuthenticated(page);
+});
 
-		// Verify authenticated state
-		await waitForAuthenticated(page);
+test("has tokens after login", async ({ page }) => {
+	await login(page);
+	await expect(
+		page.getByTestId("access-token"),
+		"displays access token",
+	).toBeVisible();
+	await expect(
+		page.getByTestId("token-data"),
+		"displays decoded token data",
+	).toBeVisible();
 
-		// Verify token is displayed
-		await expect(page.locator('[data-testid="access-token"]')).toBeVisible();
-		await expect(page.locator('[data-testid="token-data"]')).toBeVisible();
-	});
+	await expect(page.getByTestId("id-token"), "displays ID token").toBeVisible();
+	await expect(
+		page.getByTestId("id-token-data"),
+		"displays decoded ID token data",
+	).toBeVisible();
+});
 
-	test("should perform OAuth2 PKCE login flow with replace", async ({
-		page,
-	}) => {
-		// Click login replace button
-		await page.click('[data-testid="login-replace-button"]');
+test("can log out", async ({ page }) => {
+	await login(page);
+	await logout(page);
+	await expect(page.getByTestId("access-token")).not.toBeVisible();
+});
 
-		// Perform Dex login
-		await performDexLogin(page);
+test("clears URL parameters after login", async ({ page }) => {
+	await login(page);
+	expect(page.url()).not.toContain("code=");
+	expect(page.url()).not.toContain("state=");
+});
 
-		// Verify authenticated state
-		await waitForAuthenticated(page);
-		await expect(page.locator('[data-testid="access-token"]')).toBeVisible();
-	});
-
-	test("should decode access token when decodeToken is true", async ({
-		page,
-	}) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// Check that token data is present and contains expected fields
-		const tokenData = await page
-			.locator('[data-testid="token-data"]')
-			.textContent();
-		expect(tokenData).toBeTruthy();
-
-		// Token data should be valid JSON
-		const parsed = JSON.parse(tokenData!);
-		expect(parsed).toBeDefined();
-	});
-
-	test("should display ID token when available", async ({ page }) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// ID token should be present (Dex returns it with openid scope)
-		await expect(page.locator('[data-testid="id-token"]')).toBeVisible();
-		await expect(page.locator('[data-testid="id-token-data"]')).toBeVisible();
-	});
-
-	test("should perform logout", async ({ page }) => {
-		// First login
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// Then logout
-		await page.click('[data-testid="logout-button"]');
-
-		// Should return to not authenticated state
-		await waitForNotAuthenticated(page);
-
-		// Token should no longer be visible
-		await expect(
-			page.locator('[data-testid="access-token"]'),
-		).not.toBeVisible();
-	});
-
-	test("should clear URL parameters after login", async ({ page }) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// URL should not contain code or state parameters
-		const url = page.url();
-		expect(url).not.toContain("code=");
-		expect(url).not.toContain("state=");
-	});
-
-	test("should persist authentication across page reload", async ({ page }) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-
-		// Reload the page
-
-		// Should still be authenticated
-		await waitForAuthenticated(page);
-		await expect(page.locator('[data-testid="access-token"]')).toBeVisible();
-	});
-
-	test("should use session storage by default", async ({ page }) => {
-		await page.click('[data-testid="login-button"]');
-		await performDexLogin(page);
-		await waitForAuthenticated(page);
-	});
+test("stays authenticated after page reload", async ({ page }) => {
+	await login(page);
+	await page.reload();
+	await expectAuthenticated(page);
 });
