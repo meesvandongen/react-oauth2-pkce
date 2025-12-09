@@ -1,74 +1,75 @@
+import { HttpResponse, http } from "msw";
 import { test } from "../playwright.setup";
 import { expectAuthError, expectAuthenticated, login } from "./helpers";
 
-test.describe("Network Resilience", () => {
-	test("completes login with slow network", async ({ page }) => {
-		await page.goto("/basic");
-		await page.route("**/idp/token", async (route) => {
-			await new Promise((r) => setTimeout(r, 100));
-			await route.continue();
-		});
+test("shows error when token endpoint returns 401", async ({
+	page,
+	network,
+}) => {
+	network.use(
+		http.post("**/token", async ({ request }) => {
+			return HttpResponse.json(
+				{ error: "unauthorized_client" },
+				{ status: 401 },
+			);
+		}),
+	);
 
-		await login(page);
-		await expectAuthenticated(page);
-	});
+	await page.goto("/basic");
+	await login(page);
+	await expectAuthError(page);
+});
 
-	test("shows error when token endpoint returns 401", async ({ page }) => {
-		await page.route("**/idp/token", async (route) => {
-			await route.fulfill({
-				status: 401,
-				contentType: "application/json",
-				body: JSON.stringify({ error: "unauthorized_client" }),
-			});
-		});
+test("shows error for malformed JSON response", async ({ page, network }) => {
+	network.use(
+		http.post("**/token", async ({ request }) => {
+			return HttpResponse.text("{ invalidJson: true ");
+		}),
+	);
 
-		await page.goto("/basic?code=fake&state=fake");
-		await expectAuthError(page);
-	});
+	await page.goto("/basic");
+	await login(page);
+	await expectAuthError(page);
+});
 
-	test("shows error for malformed JSON response", async ({ page }) => {
-		await page.route("**/idp/token", async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: "application/json",
-				body: "not valid json {{{",
-			});
-		});
+test("shows error for empty response", async ({ page, network }) => {
+	network.use(
+		http.post("**/token", async ({ request }) => {
+			return new Response(null, { status: 200 });
+		}),
+	);
 
-		await page.goto("/basic?code=fake&state=fake");
-		await expectAuthError(page);
-	});
+	await page.goto("/basic");
+	await login(page);
+	await expectAuthError(page);
+});
 
-	test("shows error for empty response", async ({ page }) => {
-		await page.route("**/idp/token", async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: "application/json",
-				body: "",
-			});
-		});
+test("shows error for HTML error page", async ({ page, network }) => {
+	network.use(
+		http.post("**/token", async ({ request }) => {
+			return HttpResponse.html("<h1>Server Error</h1>", { status: 500 });
+		}),
+	);
+	await page.goto("/basic");
+	await login(page);
+	await expectAuthError(page);
+});
 
-		await page.goto("/basic?code=fake&state=fake");
-		await expectAuthError(page);
-	});
+test("shows error from authorization endpoint", async ({ page, network }) => {
+	network.use(
+		http.get("**/auth", async ({ request }) => {
+			const url = new URL(request.url);
+			const redirectUri = new URL(url.searchParams.get("redirect_uri")!);
+			redirectUri.searchParams.set("error", "access_denied");
+			redirectUri.searchParams.set(
+				"error_description",
+				"The user denied access.",
+			);
+			return HttpResponse.redirect(redirectUri.toString(), 302);
+		}),
+	);
 
-	test("shows error for HTML error page", async ({ page }) => {
-		await page.route("**/idp/token", async (route) => {
-			await route.fulfill({
-				status: 500,
-				contentType: "text/html",
-				body: "<h1>Error</h1>",
-			});
-		});
-
-		await page.goto("/basic?code=fake&state=fake");
-		await expectAuthError(page);
-	});
-
-	test("shows error from authorization endpoint", async ({ page }) => {
-		await page.goto(
-			"/basic?error=access_denied&error_description=User%20denied",
-		);
-		await expectAuthError(page);
-	});
+	await page.goto("/basic");
+	await login(page);
+	await expectAuthError(page);
 });

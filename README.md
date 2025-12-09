@@ -250,3 +250,8 @@ Either by refreshing the page, or clicking a "Log in" button.
 ## Contribute
 
 You are most welcome to create issues and pull requests :)
+
+## TODO
+
+- Multiple Tab support
+- onSessionExpired callback

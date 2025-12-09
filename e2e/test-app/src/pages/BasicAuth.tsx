@@ -7,6 +7,7 @@ import {
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import {
 	AuthStatusPanel,
+	AuthStorageDetails,
 	AuthTokenDetails,
 } from "../components/AuthInfoPanels";
 import { AuthPage } from "../components/AuthPage";
@@ -16,6 +17,7 @@ const authConfig: TAuthConfig = {
 	authorizationEndpoint: "http://localhost:5556/idp/auth",
 	tokenEndpoint: "http://localhost:5556/idp/token",
 	redirectUri: "http://localhost:3010/basic/",
+	logoutEndpoint: "http://localhost:5556/idp/logout",
 	scope: "openid profile email offline_access",
 	decodeToken: true,
 	autoLogin: false,
@@ -30,6 +32,7 @@ export function BasicAuth() {
 			<AuthStatusPanel />
 			<AuthActionButtons />
 			<AuthTokenDetails />
+			<AuthStorageDetails />
 		</AuthPage>
 	);
 }

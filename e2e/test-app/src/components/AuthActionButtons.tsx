@@ -51,8 +51,36 @@ export function AuthActionButtons({
 			>
 				Log In (extra parameter)
 			</button>
+			<button
+				onClick={() => logIn("login-custom-state-button")}
+				data-testid="login-custom-state-button"
+			>
+				Log In (custom state)
+			</button>
+
 			<button onClick={() => logOut()} data-testid="logout-button">
 				Log Out
+			</button>
+
+			<button
+				onClick={() => logOut("logout-with-state-button")}
+				data-testid="logout-with-state-button"
+			>
+				Log Out (With State)
+			</button>
+			<button
+				onClick={() => logOut(undefined, "user@example.com")}
+				data-testid="logout-with-hint-button"
+			>
+				Log Out (With Hint)
+			</button>
+			<button
+				onClick={() =>
+					logOut("state-123", "user@example.com", { extra_param: "value" })
+				}
+				data-testid="logout-full-button"
+			>
+				Log Out (Full Params)
 			</button>
 		</div>
 	);

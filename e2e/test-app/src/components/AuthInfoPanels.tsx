@@ -1,4 +1,4 @@
-import { type ReactNode, useContext } from "react";
+import { type ReactNode, useContext, useEffect, useState } from "react";
 import { AuthContext, type IAuthContext } from "../../../../src/index";
 
 interface AuthStatusPanelProps {
@@ -46,6 +46,83 @@ export function AuthTokenDetails() {
 			<h3>Decoded ID Token Data</h3>
 			<pre data-testid="id-token-data">
 				{JSON.stringify(idTokenData, null, 2)}
+			</pre>
+		</div>
+	);
+}
+
+type StorageSnapshot = Record<string, string | null>;
+
+type AuthStorageSnapshot = {
+	local: StorageSnapshot;
+	session: StorageSnapshot;
+};
+
+function readBrowserStorage(storage?: Storage): StorageSnapshot {
+	if (!storage) {
+		return {};
+	}
+
+	const snapshot: StorageSnapshot = {};
+	for (let i = 0; i < storage.length; i++) {
+		const key = storage.key(i);
+		if (key) {
+			snapshot[key] = storage.getItem(key);
+		}
+	}
+
+	return snapshot;
+}
+
+const createSnapshot = (): AuthStorageSnapshot => {
+	if (typeof window === "undefined") {
+		return { local: {}, session: {} };
+	}
+
+	return {
+		local: readBrowserStorage(window.localStorage),
+		session: readBrowserStorage(window.sessionStorage),
+	};
+};
+
+export function AuthStorageDetails() {
+	const [storageSnapshot, setStorageSnapshot] = useState<AuthStorageSnapshot>(
+		() => createSnapshot(),
+	);
+
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		const refresh = () => {
+			setStorageSnapshot(createSnapshot());
+		};
+
+		const handleStorageEvent = () => {
+			refresh();
+		};
+
+		refresh();
+		window.addEventListener("storage", handleStorageEvent);
+		const interval = window.setInterval(refresh, 500);
+
+		return () => {
+			window.removeEventListener("storage", handleStorageEvent);
+			window.clearInterval(interval);
+		};
+	}, []);
+
+	return (
+		<div style={{ marginTop: "20px" }}>
+			<h3>Local Storage Entries</h3>
+			<pre data-testid="local-storage-entries">
+				{JSON.stringify(storageSnapshot.local, null, 2)}
+			</pre>
+
+			<h3 style={{ marginTop: "20px" }}>Session Storage Entries</h3>
+			<pre data-testid="session-storage-entries">
+				{JSON.stringify(storageSnapshot.session, null, 2)}
 			</pre>
 		</div>
 	);

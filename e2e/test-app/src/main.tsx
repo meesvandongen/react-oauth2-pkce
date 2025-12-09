@@ -5,11 +5,9 @@ import { AbsoluteExpiryAuth } from "./pages/AbsoluteExpiryAuth";
 import { AutoLoginAuth } from "./pages/AutoLoginAuth";
 import { BasicAuth } from "./pages/BasicAuth";
 import { ClearURLAuth } from "./pages/ClearURLAuth";
-import { CustomStateAuth } from "./pages/CustomStateAuth";
 import { ExtraParamsAuth } from "./pages/ExtraParamsAuth";
 import { Home } from "./pages/Home";
 import { LocalStorageAuth } from "./pages/LocalStorageAuth";
-import { LogoutTestAuth } from "./pages/LogoutTestAuth";
 import { MultiAuthTest } from "./pages/MultiAuthTest";
 import { MultiTabAuth } from "./pages/MultiTabAuth";
 import { NetworkAuth } from "./pages/NetworkAuth";
@@ -28,12 +26,10 @@ createRoot(document.getElementById("root")!).render(
 				<Route path="/basic/*" element={<BasicAuth />} />
 				<Route path="/autologin/*" element={<AutoLoginAuth />} />
 				<Route path="/localstorage/*" element={<LocalStorageAuth />} />
-				<Route path="/customstate/*" element={<CustomStateAuth />} />
 				<Route path="/refresh/*" element={<RefreshTokenAuth />} />
 				<Route path="/prepostlogin/*" element={<PrePostLoginAuth />} />
 				<Route path="/extraparams/*" element={<ExtraParamsAuth />} />
 				<Route path="/multiauth/*" element={<MultiAuthTest />} />
-				{/* New test routes */}
 				<Route path="/timing/*" element={<TimingAuth />} />
 				<Route path="/absolute-expiry/*" element={<AbsoluteExpiryAuth />} />
 				<Route path="/popup/*" element={<PopupAuth />} />
@@ -41,7 +37,6 @@ createRoot(document.getElementById("root")!).render(
 				<Route path="/network/*" element={<NetworkAuth />} />
 				<Route path="/opaque-token/*" element={<OpaqueTokenAuth />} />
 				<Route path="/clear-url/*" element={<ClearURLAuth />} />
-				<Route path="/logout-test/*" element={<LogoutTestAuth />} />
 				<Route path="/no-scope-refresh/*" element={<NoScopeRefreshAuth />} />
 			</Routes>
 		</BrowserRouter>
