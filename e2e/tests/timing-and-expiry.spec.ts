@@ -1,29 +1,50 @@
+import { HttpResponse, http } from "msw";
+import { TokenEndpointSuccess } from "../msw/mockOidcProvider";
 import { expect, test } from "../playwright.setup";
-import { login } from "./helpers";
+import { expectAuthenticated, login } from "./helpers";
 
-test.describe("Token Timing", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/timing");
-	});
+test.beforeEach(async ({ page }) => {
+	await page.goto("/basic");
+});
 
-	test("shows timing configuration and UI elements after login", async ({
-		page,
-	}) => {
-		await login(page);
+test("Opaque tokens refresh after expiry", async ({ page, network }) => {
+	network.use(
+		http.post("**/token", (req) => {
+			return HttpResponse.json<TokenEndpointSuccess>({
+				access_token: "initial-access-token",
+				refresh_token: "initial-refresh-token",
+				expires_in: 5 * 60,
+				token_type: "Bearer",
+				id_token: "initial-id-token",
+				scope: "openid profile email",
+			});
+		}),
+	);
 
-		await expect(page.getByTestId("config-token-expires")).toContainText(
-			"5 seconds",
-		);
-		await expect(page.getByTestId("config-refresh-expires")).toContainText(
-			"60 seconds",
-		);
-		await expect(page.getByTestId("config-strategy")).toContainText(
-			"renewable",
-		);
-		await expect(page.getByTestId("storage-info")).toBeVisible();
-		await expect(page.getByTestId("callback-status")).toBeVisible();
-		await expect(page.getByTestId("refresh-count")).toBeVisible();
-		await expect(page.getByTestId("check-callback")).toBeVisible();
-		await expect(page.getByTestId("callback-login")).toBeVisible();
-	});
+	await page.clock.install();
+	await login(page);
+	await expectAuthenticated(page);
+
+	await expect(page.getByTestId("access-token")).toHaveText(
+		"initial-access-token",
+	);
+	await expect(page.getByTestId("id-token")).toHaveText("initial-id-token");
+
+	network.use(
+		http.post("**/token", (req) => {
+			return HttpResponse.json<TokenEndpointSuccess>({
+				access_token: "new-access-token",
+				refresh_token: "new-refresh-token",
+				expires_in: 5 * 60,
+				token_type: "Bearer",
+				id_token: "new-id-token",
+				scope: "openid profile email",
+			});
+		}),
+	);
+
+	await page.clock.fastForward("06:00");
+
+	await expect(page.getByTestId("access-token")).toHaveText("new-access-token");
+	await expect(page.getByTestId("id-token")).toHaveText("new-id-token");
 });

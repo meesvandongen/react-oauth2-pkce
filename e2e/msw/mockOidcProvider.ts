@@ -91,7 +91,8 @@ export class MockOidcProvider {
 
 	constructor(options: ProviderOptions = {}) {
 		this.issuer = options.issuer ?? "http://localhost:5556/idp";
-		this.accessTokenLifetimeSeconds = options.accessTokenLifetimeSeconds ?? 600;
+		this.accessTokenLifetimeSeconds =
+			options.accessTokenLifetimeSeconds ?? 60 * 10;
 		this.refreshTokenLifetimeSeconds =
 			options.refreshTokenLifetimeSeconds ?? 3600;
 		this.adjustTokenPayload =
