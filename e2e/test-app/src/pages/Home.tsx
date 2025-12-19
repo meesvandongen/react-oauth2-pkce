@@ -32,12 +32,6 @@ export function Home() {
             <p>Custom state parameter handling</p>
           </li>
           <li>
-            <Link to='/refresh' data-testid='link-refresh'>
-              Refresh Token
-            </Link>
-            <p>Refresh token handling and expiry callbacks</p>
-          </li>
-          <li>
             <Link to='/prepostlogin' data-testid='link-prepostlogin'>
               Pre/Post Login Hooks
             </Link>

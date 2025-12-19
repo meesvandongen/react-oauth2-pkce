@@ -2,6 +2,7 @@ import { type TAuthConfig } from "react-oauth2-code-pkce";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import {
 	AuthStatusPanel,
+	AuthStorageDetails,
 	AuthTokenDetails,
 } from "../components/AuthInfoPanels";
 import { AuthPage } from "../components/AuthPage";
@@ -25,6 +26,7 @@ export function LocalStorageAuth() {
 			<AuthStatusPanel />
 			<AuthActionButtons />
 			<AuthTokenDetails />
+			<AuthStorageDetails />
 		</AuthPage>
 	);
 }

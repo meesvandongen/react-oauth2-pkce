@@ -58,11 +58,7 @@ type AuthStorageSnapshot = {
 	session: StorageSnapshot;
 };
 
-function readBrowserStorage(storage?: Storage): StorageSnapshot {
-	if (!storage) {
-		return {};
-	}
-
+function readBrowserStorage(storage: Storage): StorageSnapshot {
 	const snapshot: StorageSnapshot = {};
 	for (let i = 0; i < storage.length; i++) {
 		const key = storage.key(i);
@@ -75,10 +71,6 @@ function readBrowserStorage(storage?: Storage): StorageSnapshot {
 }
 
 const createSnapshot = (): AuthStorageSnapshot => {
-	if (typeof window === "undefined") {
-		return { local: {}, session: {} };
-	}
-
 	return {
 		local: readBrowserStorage(window.localStorage),
 		session: readBrowserStorage(window.sessionStorage),

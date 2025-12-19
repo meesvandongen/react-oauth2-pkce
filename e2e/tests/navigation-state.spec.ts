@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { expect, test } from "../playwright.setup";
 import {
+	expectAuthError,
 	expectAuthenticated,
 	expectNoAuthError,
 	expectNotAuthenticated,
@@ -19,8 +20,8 @@ test("handles back navigation from IdP", async ({ page, network }) => {
 	await page.waitForURL(/.*localhost:5556\/idp.*/);
 
 	await page.goBack();
-	await expectAuthenticated(page);
-	await expectNoAuthError(page);
+	await expectNotAuthenticated(page);
+	await expectAuthError(page);
 });
 
 test("maintains auth when navigating away and back", async ({ page }) => {

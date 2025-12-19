@@ -1,5 +1,5 @@
-import { NetworkFixture } from "@msw/playwright";
-import { test as base } from "@playwright/test";
+import { NetworkFixture } from "@mvd/playwright-msw";
+import { test as base, Page } from "@playwright/test";
 import { createOidcHandlers } from "./msw/handlers";
 import { MockOidcProvider } from "./msw/mockOidcProvider";
 
@@ -14,11 +14,12 @@ export const test = base.extend<Fixtures>({
 		await use(provider);
 	},
 	network: [
-		async ({ oidc, page }, use) => {
+		async ({ oidc, page, context, baseURL }, use) => {
 			const handlers = createOidcHandlers(oidc);
 			const networkFixture = new NetworkFixture({
 				initialHandlers: handlers,
-				page,
+				context,
+				baseUrl: baseURL,
 			});
 
 			await networkFixture.start();
