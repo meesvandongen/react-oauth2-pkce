@@ -6,11 +6,6 @@ import { BasicAuth } from "./pages/BasicAuth";
 import { ExtraParamsAuth } from "./pages/ExtraParamsAuth";
 import { Home } from "./pages/Home";
 import { LocalStorageAuth } from "./pages/LocalStorageAuth";
-import { MultiAuthTest } from "./pages/MultiAuthTest";
-import { MultiTabAuth } from "./pages/MultiTabAuth";
-import { NetworkAuth } from "./pages/NetworkAuth";
-import { NoScopeRefreshAuth } from "./pages/NoScopeRefreshAuth";
-import { OpaqueTokenAuth } from "./pages/OpaqueTokenAuth";
 import { PrePostLoginAuth } from "./pages/PrePostLoginAuth";
 
 createRoot(document.getElementById("root")!).render(
@@ -23,11 +18,6 @@ createRoot(document.getElementById("root")!).render(
 				<Route path="/localstorage/*" element={<LocalStorageAuth />} />
 				<Route path="/prepostlogin/*" element={<PrePostLoginAuth />} />
 				<Route path="/extraparams/*" element={<ExtraParamsAuth />} />
-				<Route path="/multiauth/*" element={<MultiAuthTest />} />
-				<Route path="/multitab/*" element={<MultiTabAuth />} />
-				<Route path="/network/*" element={<NetworkAuth />} />
-				<Route path="/opaque-token/*" element={<OpaqueTokenAuth />} />
-				<Route path="/no-scope-refresh/*" element={<NoScopeRefreshAuth />} />
 			</Routes>
 		</BrowserRouter>
 	</StrictMode>,

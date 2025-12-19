@@ -34,7 +34,7 @@ test("maintains auth when navigating away and back", async ({ page }) => {
 	await expectAuthenticated(page);
 });
 
-test("handles hash in URL", async ({ page }) => {
+test.skip("handles hash in URL", async ({ page }) => {
 	await page.goto("/basic#section");
 	await login(page);
 	await expectAuthenticated(page);

@@ -78,23 +78,26 @@ export class OAuthError extends Error {
 const DEFAULT_LOGIN_HINT = "admin@example.com";
 
 export class MockOidcProvider {
-	private readonly issuer: string;
-	private readonly accessTokenLifetimeSeconds: number;
-	private readonly refreshTokenLifetimeSeconds: number;
-	private readonly adjustTokenPayload?: (input: {
+	readonly #authorizationCodes = new Map<string, AuthorizationGrant>();
+	readonly #refreshGrants = new Map<string, RefreshGrant>();
+
+	public adjustTokenPayload?: (input: {
 		authContext: AuthorizationRequestContext;
 		tokenHeaders: Record<string, string>;
 		tokenParams: Record<string, string>;
 	}) => Promise<Record<string, unknown>>;
-	private readonly authorizationCodes = new Map<string, AuthorizationGrant>();
-	private readonly refreshGrants = new Map<string, RefreshGrant>();
+	public issuer: string;
+	public accessTokenLifetimeSeconds: number;
+	public refreshTokenLifetimeSeconds: number;
+	public refreshTokenRotation = true;
+	public refreshTokenReuse = false;
 
 	constructor(options: ProviderOptions = {}) {
 		this.issuer = options.issuer ?? "http://localhost:5556/idp";
 		this.accessTokenLifetimeSeconds =
-			options.accessTokenLifetimeSeconds ?? 60 * 10;
+			options.accessTokenLifetimeSeconds ?? 60 * 10; // 10 minutes
 		this.refreshTokenLifetimeSeconds =
-			options.refreshTokenLifetimeSeconds ?? 3600;
+			options.refreshTokenLifetimeSeconds ?? 60 * 60; // 1 hour
 		this.adjustTokenPayload =
 			options.adjustTokenPayload ??
 			(async ({ authContext, tokenParams }) => ({
@@ -183,7 +186,7 @@ export class MockOidcProvider {
 		};
 
 		const code = this.generateCode();
-		this.authorizationCodes.set(code, {
+		this.#authorizationCodes.set(code, {
 			...grant,
 			code,
 			user: this.resolveUser(grant.loginHint),
@@ -269,7 +272,7 @@ export class MockOidcProvider {
 			);
 		}
 
-		const grant = this.authorizationCodes.get(code);
+		const grant = this.#authorizationCodes.get(code);
 		if (!grant) {
 			throw new OAuthError(
 				"invalid_grant",
@@ -304,7 +307,7 @@ export class MockOidcProvider {
 			tokenHeaders[key] = value;
 		}
 
-		this.authorizationCodes.delete(code);
+		this.#authorizationCodes.delete(code);
 		return this.buildTokenResponse(
 			grant.user,
 			grant.scope,
@@ -327,8 +330,17 @@ export class MockOidcProvider {
 			);
 		}
 
-		const grant = this.refreshGrants.get(refreshToken);
+		const grant = this.#refreshGrants.get(refreshToken);
 		if (!grant) {
+			throw new OAuthError(
+				"invalid_grant",
+				"Refresh token is invalid or expired",
+				400,
+			);
+		}
+
+		if (Date.now() > grant.issuedAt + this.refreshTokenLifetimeSeconds * 1000) {
+			this.#refreshGrants.delete(refreshToken);
 			throw new OAuthError(
 				"invalid_grant",
 				"Refresh token is invalid or expired",
@@ -342,6 +354,10 @@ export class MockOidcProvider {
 				"Client mismatch for refresh token",
 				400,
 			);
+		}
+
+		if (!this.refreshTokenReuse) {
+			this.#refreshGrants.delete(refreshToken);
 		}
 
 		const tokenParams: Record<string, string> = {};
@@ -361,6 +377,7 @@ export class MockOidcProvider {
 			grant.authContext,
 			tokenHeaders,
 			tokenParams,
+			true,
 		);
 	}
 
@@ -386,6 +403,7 @@ export class MockOidcProvider {
 		authContext: AuthorizationRequestContext,
 		tokenHeaders: Record<string, string>,
 		tokenParams: Record<string, string>,
+		isRefresh = false,
 	): Promise<TokenEndpointSuccess> {
 		const issuedAt = Math.floor(Date.now() / 1000);
 		const expiresAt = issuedAt + this.accessTokenLifetimeSeconds;
@@ -400,6 +418,7 @@ export class MockOidcProvider {
 			scope,
 			iat: issuedAt,
 			exp: expiresAt,
+			jti: crypto.randomUUID(),
 		};
 
 		if (this.adjustTokenPayload) {
@@ -421,12 +440,14 @@ export class MockOidcProvider {
 
 		let refresh_token: string | undefined;
 		if (scope.includes("offline_access")) {
-			refresh_token = this.generateRefreshToken(
-				user,
-				scope,
-				clientId,
-				authContext,
-			);
+			if (!isRefresh || this.refreshTokenRotation) {
+				refresh_token = this.generateRefreshToken(
+					user,
+					scope,
+					clientId,
+					authContext,
+				);
+			}
 		}
 
 		const response: TokenEndpointSuccess = {
@@ -452,7 +473,7 @@ export class MockOidcProvider {
 		authContext: AuthorizationRequestContext,
 	) {
 		const token = `rt_${randomBytes(24).toString("hex")}`;
-		this.refreshGrants.set(token, {
+		this.#refreshGrants.set(token, {
 			token,
 			user,
 			clientId,

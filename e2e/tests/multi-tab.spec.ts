@@ -8,22 +8,22 @@ import {
 } from "./helpers";
 
 test("shares authentication across tabs", async ({ context, page }) => {
-	await page.goto("http://localhost:3010/multitab");
+	await page.goto("/localstorage");
 	await login(page);
 	await expectAuthenticated(page);
 
 	const page2 = await context.newPage();
-	await page2.goto("http://localhost:3010/multitab");
+	await page2.goto("/localstorage");
 	await expectAuthenticated(page2);
 });
 
 test("syncs logout across tabs", async ({ context, page }) => {
-	await page.goto("http://localhost:3010/multitab");
+	await page.goto("/localstorage");
 	await login(page);
 	await expectAuthenticated(page);
 
 	const page2 = await context.newPage();
-	await page2.goto("http://localhost:3010/multitab");
+	await page2.goto("/localstorage");
 	await expectAuthenticated(page2);
 
 	await logout(page);
@@ -36,11 +36,11 @@ test("does not share sessionStorage between tabs", async ({
 	context,
 	page,
 }) => {
-	await page.goto("http://localhost:3010/basic");
+	await page.goto("/basic");
 	await login(page);
 	await expectAuthenticated(page);
 
 	const page2 = await context.newPage();
-	await page2.goto("http://localhost:3010/basic");
+	await page2.goto("/basic");
 	await expectNotAuthenticated(page2);
 });

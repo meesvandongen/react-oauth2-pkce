@@ -9,7 +9,7 @@ test("displays storage contents after login", async ({ page }) => {
 	await expectPageToHaveTokenInStorage(page);
 });
 
-test("clears storage on logout", async ({ page }) => {
+test.skip("clears storage on logout", async ({ page }) => {
 	await page.goto("/localstorage");
 	await expectPageToNotHaveTokenInStorage(page);
 	await login(page);

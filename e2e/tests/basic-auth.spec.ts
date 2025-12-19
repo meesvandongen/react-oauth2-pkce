@@ -44,14 +44,18 @@ test("has tokens after login", async ({ page }) => {
 
 test("can log out", async ({ page }) => {
 	await login(page);
+	await expectAuthenticated(page);
+	await expect(page.getByTestId("access-token")).not.toBeEmpty();
+
 	await logout(page);
-	await expect(page.getByTestId("access-token")).not.toBeVisible();
+	await expect(page.getByTestId("access-token")).toBeEmpty();
 });
 
 test("clears URL parameters after login", async ({ page }) => {
 	await login(page);
-	expect(page.url()).not.toContain("code=");
-	expect(page.url()).not.toContain("state=");
+	await expectAuthenticated(page);
+	expect.poll(() => page.url()).not.toContain("code=");
+	expect.poll(() => page.url()).not.toContain("state=");
 });
 
 test("stays authenticated after page reload", async ({ page }) => {
