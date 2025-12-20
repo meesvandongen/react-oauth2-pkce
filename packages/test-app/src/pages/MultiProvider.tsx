@@ -1,4 +1,5 @@
 import { createAuthCore, TAuthConfig } from "@mvd/auth-core";
+import { useState } from "react";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import { AuthStatusPanel } from "../components/AuthInfoPanels";
 
@@ -12,17 +13,20 @@ const baseConfig: TAuthConfig = {
 	autoLogin: false,
 };
 
-const store1 = createAuthCore({
-	...baseConfig,
-	storageKeyPrefix: "auth1_",
-});
-
-const store2 = createAuthCore({
-	...baseConfig,
-	storageKeyPrefix: "auth2_",
-});
-
 export function MultiProvider() {
+	const [store1] = useState(() =>
+		createAuthCore({
+			...baseConfig,
+			storageKeyPrefix: "auth1_",
+		}),
+	);
+
+	const [store2] = useState(() =>
+		createAuthCore({
+			...baseConfig,
+			storageKeyPrefix: "auth2_",
+		}),
+	);
 	return (
 		<div>
 			<h1>Multi Provider Test</h1>

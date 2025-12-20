@@ -147,8 +147,6 @@ export const fetchTokens = (
 		redirect_uri: config.redirectUri,
 		code_verifier: codeVerifier,
 		...config.extraTokenParameters,
-		// TODO: Remove in 2.0
-		...config.extraAuthParams,
 	};
 	return postTokenRequest(
 		config.tokenEndpoint,

@@ -21,10 +21,6 @@ const authConfig: TInternalConfig = {
 	storageKeyPrefix: "ROCP_",
 	refreshWithScope: true,
 	loginMethod: "redirect",
-	extraAuthParams: {
-		prompt: true,
-		client_id: "anotherClientId",
-	},
 	extraTokenParameters: {
 		prompt: true,
 		client_id: "anotherClientId",

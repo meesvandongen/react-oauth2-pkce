@@ -36,7 +36,8 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"build": "tsdown src/index.ts --format esm,cjs --dts",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check ."
 	},
 	"repository": {
 		"type": "git",

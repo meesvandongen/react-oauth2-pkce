@@ -6,7 +6,8 @@
 		"start": "vite --port 3010 --host",
 		"build": "vite build",
 		"preview": "vite preview --port 3010",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check ."
 	},
 	"dependencies": {
 		"@mvd/auth-core": "workspace:*",

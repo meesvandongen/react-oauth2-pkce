@@ -3,20 +3,17 @@
 	"private": true,
 	"version": "0.1.0",
 	"scripts": {
-		"start": "pnpm --filter e2e-test-app start",
-		"build": "pnpm --filter @mvd/auth-react build && pnpm --filter e2e-test-app build",
-		"test": "pnpm --filter @mvd/auth-react test",
-		"test:e2e": "pnpm --filter e2e-tests test",
-		"test:e2e:ui": "pnpm --filter e2e-tests test:ui",
-		"test:e2e:headless": "pnpm --filter e2e-tests test:headless",
-		"test:e2e:debug": "pnpm --filter e2e-tests test:debug",
-		"typecheck": "pnpm --filter \"*\" typecheck",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"playwright:install": "pnpm --filter e2e-tests playwright:install"
+		"start": "turbo start",
+		"build": "turbo build",
+		"test": "turbo test",
+		"test:ui": "turbo test:ui",
+		"typecheck": "turbo typecheck",
+		"lint": "turbo lint",
+		"fix": "biome check --write ."
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.8",
+		"turbo": "^2.7.0",
 		"typescript": "5.9.3"
 	},
 	"packageManager": "pnpm@10.26.1"

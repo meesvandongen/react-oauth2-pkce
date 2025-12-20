@@ -11,7 +11,8 @@
 	},
 	"scripts": {
 		"build": "tsdown src/index.ts --format esm,cjs --dts",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check ."
 	},
 	"devDependencies": {
 		"@types/node": "^25.0.3",

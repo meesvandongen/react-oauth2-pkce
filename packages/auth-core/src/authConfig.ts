@@ -64,14 +64,4 @@ export function validateConfig(config: TInternalConfig) {
 		);
 	if (!["session", "local"].includes(config.storage))
 		throw Error("'storage' must be one of ('session', 'local')");
-	if (config?.extraAuthParams)
-		console.warn(
-			"The 'extraAuthParams' configuration parameter will be deprecated. You should use " +
-				"'extraTokenParameters' instead.",
-		);
-	if (config?.extraAuthParams && config?.extraTokenParameters)
-		console.warn(
-			"Using both 'extraAuthParams' and 'extraTokenParameters' is not recommended. " +
-				"They do the same thing, and you should only use 'extraTokenParameters'",
-		);
 }

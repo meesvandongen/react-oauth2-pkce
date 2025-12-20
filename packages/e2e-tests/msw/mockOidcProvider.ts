@@ -388,6 +388,10 @@ export class MockOidcProvider {
 				: verifier;
 
 		if (expectedChallenge !== grant.codeChallenge) {
+			console.error("PKCE verification failed:", {
+				expectedChallenge,
+				storedChallenge: grant.codeChallenge,
+			});
 			throw new OAuthError(
 				"invalid_grant",
 				"code_verifier does not match the stored code_challenge",

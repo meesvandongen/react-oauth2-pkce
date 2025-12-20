@@ -1,6 +1,6 @@
-import { createAuthCore } from "@mvd/auth-core";
+import { createAuthCore, TAuthConfig } from "@mvd/auth-core";
 import { beforeEach, vi } from "vitest";
-import { createUseAuth, type TAuthConfig } from "../src";
+import { useAuth } from "../src";
 
 beforeEach(() => {
 	localStorage.clear();
@@ -24,9 +24,6 @@ export const authConfig: TAuthConfig = {
 	extraLogoutParameters: {
 		testLogoutKey: "logoutValue",
 	},
-	extraAuthParams: {
-		client_id: "anotherClientId",
-	},
 	extraTokenParameters: {
 		testTokenKey: "tokenValue",
 	},
@@ -34,18 +31,24 @@ export const authConfig: TAuthConfig = {
 
 export function createAuthHarness(config: TAuthConfig = authConfig) {
 	const core = createAuthCore(config);
-	const useAuth = createUseAuth(core);
 
 	const AuthConsumer = () => {
 		const { tokenData, logOut, loginInProgress, logIn, token, error } =
-			useAuth();
+			useAuth(core);
 		return (
 			<>
 				<div>{tokenData?.name}</div>
-				<button type="button" onClick={() => logOut("logoutState")}>
+				<button type="button" onClick={() => logOut({ state: "logoutState" })}>
 					Log out
 				</button>
-				<button type="button" onClick={() => logIn("loginState")}>
+				<button
+					type="button"
+					onClick={() =>
+						logIn({
+							state: "loginState",
+						})
+					}
+				>
 					Log in
 				</button>
 				<p data-testid={"loginInProgress"}>{JSON.stringify(loginInProgress)}</p>

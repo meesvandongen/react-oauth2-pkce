@@ -1,0 +1,2 @@
+1. Fix strict mode: do not put authCore in react. Instead, put it in the global scope. -> we can prevent multiple instances via lazy loading es modules.
+2. Allow multiple instances of AuthCore to authenticate automatically (via global locking mechanism? spread across multiple tabs (i.e. local storage?)?).

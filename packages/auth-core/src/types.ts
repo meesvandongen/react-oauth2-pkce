@@ -66,8 +66,6 @@ export type TAuthConfig = {
 	decodeToken?: boolean;
 	autoLogin?: boolean;
 	clearURL?: boolean;
-	/** @deprecated Use `extraAuthParameters` instead. Will be removed in a future version. */
-	extraAuthParams?: TPrimitiveRecord;
 	extraAuthParameters?: TPrimitiveRecord;
 	extraTokenParameters?: TPrimitiveRecord;
 	extraLogoutParameters?: TPrimitiveRecord;

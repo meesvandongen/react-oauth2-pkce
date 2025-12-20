@@ -162,8 +162,6 @@ type TAuthConfig = {
   extraTokenParameters?: { [key: string]: string | boolean | number } // default: null
   // Can be used to provide any non-standard parameters to the logout request
   extraLogoutParameters?: { [key: string]: string | boolean | number } // default: null
-  // Superseded by 'extraTokenParameters' options. Will be deprecated in 2.0
-  extraAuthParams?: { [key: string]: string | boolean | number }  // default: null
   // Can be used if auth provider doesn't return access token expiration time in token response
   tokenExpiresIn?: number // default: null
   // Can be used if auth provider doesn't return refresh token expiration time in token response
