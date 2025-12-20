@@ -1,0 +1,25 @@
+{
+	"name": "@mvd/auth-core",
+	"version": "1.23.2",
+	"description": "Provider agnostic core utilities for OAuth2 Authorization Code flow with PKCE",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"scripts": {
+		"build": "tsdown src/index.ts --format esm,cjs --dts",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/node": "^25.0.3",
+		"tsdown": "^0.18.1",
+		"typescript": "^5.9.3"
+	},
+	"files": [
+		"dist/"
+	],
+	"license": "MIT"
+}

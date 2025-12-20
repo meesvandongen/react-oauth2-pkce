@@ -1,14 +1,10 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import { AuthProvider } from "../src";
-import { AuthConsumer, authConfig } from "./test-utils";
+import { authConfig, createAuthHarness } from "./test-utils";
 
 test("First page visit should redirect to auth provider for login", async () => {
-	render(
-		<AuthProvider authConfig={authConfig}>
-			<AuthConsumer />
-		</AuthProvider>,
-	);
+	const { AuthConsumer } = createAuthHarness(authConfig);
+	render(<AuthConsumer />);
 
 	await waitFor(() => {
 		expect(window.location.assign).toHaveBeenCalledWith(
@@ -23,11 +19,11 @@ test("First page visit should popup to auth provider for login", async () => {
 	// set window size to 1200x800 to make test predictable in different environments
 	global.innerWidth = 1200;
 	global.innerHeight = 800;
-	render(
-		<AuthProvider authConfig={{ ...authConfig, loginMethod: "popup" }}>
-			<AuthConsumer />
-		</AuthProvider>,
-	);
+	const { AuthConsumer } = createAuthHarness({
+		...authConfig,
+		loginMethod: "popup",
+	});
+	render(<AuthConsumer />);
 
 	await waitFor(() => {
 		expect(window.open).toHaveBeenCalledWith(
@@ -43,11 +39,8 @@ test("First page visit should popup to auth provider for login", async () => {
 test("Attempting to log in with an unsecure context should raise error", async () => {
 	// @ts-ignore
 	window.crypto.subtle.digest = undefined;
-	render(
-		<AuthProvider authConfig={authConfig}>
-			<AuthConsumer />
-		</AuthProvider>,
-	);
+	const { AuthConsumer } = createAuthHarness(authConfig);
+	render(<AuthConsumer />);
 
 	const errorNode = await waitFor(() => screen.getByTestId("error"));
 

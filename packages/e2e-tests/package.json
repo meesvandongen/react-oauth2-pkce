@@ -12,16 +12,16 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
+		"@mswjs/http-middleware": "^0.10.3",
 		"@mvd/playwright-msw": "^0.4.4",
 		"@playwright/test": "^1.49.0",
-		"@mswjs/http-middleware": "^0.10.3",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/node": "^25.0.3",
 		"cors": "^2.8.5",
 		"express": "^5.2.1",
 		"msw": "^2.12.3",
 		"openid-client": "^6.8.1",
-		"@types/cors": "^2.8.19",
-		"@types/express": "^5.0.6",
-		"@types/node": "^25.0.3",
-		"typescript": "5.6.3"
+		"typescript": "5.9.3"
 	}
 }

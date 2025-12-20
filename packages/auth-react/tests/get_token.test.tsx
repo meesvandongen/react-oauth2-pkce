@@ -1,7 +1,6 @@
 import { render, waitFor } from "@testing-library/react";
-import { AuthProvider } from "../src";
 import type { TTokenResponse } from "../src/types";
-import { AuthConsumer, authConfig } from "./test-utils";
+import { authConfig, createAuthHarness } from "./test-utils";
 
 // @ts-ignore
 global.fetch = vi.fn(() =>
@@ -27,11 +26,8 @@ describe("make token request", () => {
 	});
 
 	test("with extra parameters", async () => {
-		render(
-			<AuthProvider authConfig={authConfig}>
-				<AuthConsumer />
-			</AuthProvider>,
-		);
+		const { AuthConsumer } = createAuthHarness(authConfig);
+		render(<AuthConsumer />);
 
 		await waitFor(() =>
 			expect(fetch).toHaveBeenCalledWith("myTokenEndpoint", {
@@ -46,13 +42,11 @@ describe("make token request", () => {
 	});
 
 	test("with custom credentials", async () => {
-		render(
-			<AuthProvider
-				authConfig={{ ...authConfig, tokenRequestCredentials: "include" }}
-			>
-				<AuthConsumer />
-			</AuthProvider>,
-		);
+		const { AuthConsumer } = createAuthHarness({
+			...authConfig,
+			tokenRequestCredentials: "include",
+		});
+		render(<AuthConsumer />);
 
 		await waitFor(() =>
 			expect(fetch).toHaveBeenCalledWith("myTokenEndpoint", {

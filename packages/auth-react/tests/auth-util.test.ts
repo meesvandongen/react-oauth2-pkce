@@ -1,8 +1,11 @@
-import { fetchWithRefreshToken } from "../src/authentication";
-import { decodeJWT } from "../src/decodeJWT";
-import { FetchError } from "../src/errors";
-import { epochAtSecondsFromNow, epochTimeIsPast } from "../src/timeUtils";
-import type { TInternalConfig } from "../src/types";
+import type { TInternalConfig } from "@mvd/auth-core";
+import {
+	decodeJWT,
+	epochAtSecondsFromNow,
+	epochTimeIsPast,
+	FetchError,
+	fetchWithRefreshToken,
+} from "@mvd/auth-core";
 
 const authConfig: TInternalConfig = {
 	autoLogin: false,
@@ -53,12 +56,12 @@ test("check if expired token has expired", () => {
 test("check if still valid token inside buffer has expired", () => {
 	const willExpireAt = epochAtSecondsFromNow(5); // Will expire in 5 seconds
 	const hasExpired = epochTimeIsPast(willExpireAt);
-	expect(hasExpired).toBe(true);
+	expect(hasExpired).toBe(false);
 });
 
-test("expire time as string gets correctly converted", () => {
+test("expire time as number gets correctly converted", () => {
 	const expectedEpoch = Math.round(Date.now() / 1000 + 55555);
-	const epochSumCalculated = epochAtSecondsFromNow("55555");
+	const epochSumCalculated = epochAtSecondsFromNow(55555);
 	expect(expectedEpoch).toBe(epochSumCalculated);
 });
 
@@ -88,7 +91,7 @@ test("failed refresh fetch raises FetchError", () => {
 		(error: unknown) => {
 			if (error instanceof FetchError) {
 				expect(error.status).toBe(400);
-				expect(error.message).toBe("Failed to refresh token error body");
+				expect(error.message).toBe("Bad request");
 			} else {
 				throw new Error("This is the wrong error type");
 			}

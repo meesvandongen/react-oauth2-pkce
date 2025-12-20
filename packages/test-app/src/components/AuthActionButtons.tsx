@@ -1,58 +1,54 @@
-import { AuthContext, type IAuthContext } from "@mvd/auth-react";
-import type { CSSProperties } from "react";
-import { useContext } from "react";
+import { AuthCoreStore } from "@mvd/auth-core";
+import { useAuth } from "@mvd/auth-react";
 
 interface AuthActionButtonsProps {
-	className?: string;
-	style?: CSSProperties;
+	store: AuthCoreStore;
 }
 
-const defaultContainerStyle: CSSProperties = {
-	marginTop: "20px",
-	display: "flex",
-	gap: "8px",
-	flexWrap: "wrap",
-};
-
-export function AuthActionButtons({
-	className,
-	style,
-}: AuthActionButtonsProps) {
-	const { logIn, logOut }: IAuthContext = useContext(AuthContext);
+export function AuthActionButtons({ store }: AuthActionButtonsProps) {
+	const { logIn, logOut } = useAuth(store);
 
 	return (
-		<div className={className} style={{ ...defaultContainerStyle, ...style }}>
+		<div>
 			<button onClick={() => logIn()} data-testid="login-button">
 				Log In
 			</button>
 			<button
-				onClick={() => logIn(undefined, undefined, "replace")}
+				onClick={() =>
+					logIn({
+						method: "replace",
+					})
+				}
 				data-testid="login-replace-button"
 			>
 				Log In (replace)
 			</button>
 			<button
-				onClick={() => logIn(undefined, undefined, "popup")}
+				onClick={() => logIn({ method: "popup" })}
 				data-testid="login-popup-button"
 			>
 				Log In (popup)
 			</button>
 			<button
-				onClick={() => logIn(undefined, undefined, "redirect")}
+				onClick={() => logIn({ method: "redirect" })}
 				data-testid="login-redirect-button"
 			>
 				Log In (redirect)
 			</button>
 			<button
 				onClick={() =>
-					logIn(undefined, { custom_button_param: "extra-param-from-button" })
+					logIn({
+						additionalParameters: {
+							custom_button_param: "extra-param-from-button",
+						},
+					})
 				}
 				data-testid="login-extra-param-button"
 			>
 				Log In (extra parameter)
 			</button>
 			<button
-				onClick={() => logIn("login-custom-state-button")}
+				onClick={() => logIn({ state: "login-custom-state-button" })}
 				data-testid="login-custom-state-button"
 			>
 				Log In (custom state)
@@ -63,20 +59,24 @@ export function AuthActionButtons({
 			</button>
 
 			<button
-				onClick={() => logOut("logout-with-state-button")}
+				onClick={() => logOut({ state: "logout-with-state-button" })}
 				data-testid="logout-with-state-button"
 			>
 				Log Out (With State)
 			</button>
 			<button
-				onClick={() => logOut(undefined, "user@example.com")}
+				onClick={() => logOut({ logoutHint: "user@example.com" })}
 				data-testid="logout-with-hint-button"
 			>
 				Log Out (With Hint)
 			</button>
 			<button
 				onClick={() =>
-					logOut("state-123", "user@example.com", { extra_param: "value" })
+					logOut({
+						state: "state-123",
+						logoutHint: "user@example.com",
+						additionalParameters: { extra_param: "value" },
+					})
 				}
 				data-testid="logout-full-button"
 			>

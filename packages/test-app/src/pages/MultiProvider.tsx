@@ -1,4 +1,4 @@
-import { AuthProvider, type TAuthConfig } from "@mvd/auth-react";
+import { createAuthCore, TAuthConfig } from "@mvd/auth-core";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import { AuthStatusPanel } from "../components/AuthInfoPanels";
 
@@ -12,15 +12,15 @@ const baseConfig: TAuthConfig = {
 	autoLogin: false,
 };
 
-const config1: TAuthConfig = {
+const store1 = createAuthCore({
 	...baseConfig,
 	storageKeyPrefix: "auth1_",
-};
+});
 
-const config2: TAuthConfig = {
+const store2 = createAuthCore({
 	...baseConfig,
 	storageKeyPrefix: "auth2_",
-};
+});
 
 export function MultiProvider() {
 	return (
@@ -28,18 +28,14 @@ export function MultiProvider() {
 			<h1>Multi Provider Test</h1>
 			<div data-testid="provider-1">
 				<h2>Provider 1 (auth1_)</h2>
-				<AuthProvider authConfig={config1}>
-					<AuthStatusPanel />
-					<AuthActionButtons />
-				</AuthProvider>
+				<AuthStatusPanel store={store1} />
+				<AuthActionButtons store={store1} />
 			</div>
 			<hr />
 			<div data-testid="provider-2">
 				<h2>Provider 2 (auth2_)</h2>
-				<AuthProvider authConfig={config2}>
-					<AuthStatusPanel />
-					<AuthActionButtons />
-				</AuthProvider>
+				<AuthStatusPanel store={store2} />
+				<AuthActionButtons store={store2} />
 			</div>
 		</div>
 	);

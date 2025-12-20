@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AuthProvider } from "../src";
-import { AuthConsumer, authConfig } from "./test-utils";
+import { authConfig, createAuthHarness } from "./test-utils";
 
 test("Full featured logout requests", async () => {
 	localStorage.setItem("ROCP_loginInProgress", "false");
@@ -9,11 +8,8 @@ test("Full featured logout requests", async () => {
 	localStorage.setItem("ROCP_refreshToken", '"test-refresh-value"');
 	const user = userEvent.setup();
 
-	render(
-		<AuthProvider authConfig={authConfig}>
-			<AuthConsumer />
-		</AuthProvider>,
-	);
+	const { AuthConsumer } = createAuthHarness(authConfig);
+	render(<AuthConsumer />);
 
 	await user.click(screen.getByText("Log out"));
 
@@ -30,11 +26,11 @@ test("No refresh token, no logoutRedirect, logout request", async () => {
 	localStorage.setItem("ROCP_token", '"test-token-value"');
 	const user = userEvent.setup();
 
-	render(
-		<AuthProvider authConfig={{ ...authConfig, logoutRedirect: undefined }}>
-			<AuthConsumer />
-		</AuthProvider>,
-	);
+	const { AuthConsumer } = createAuthHarness({
+		...authConfig,
+		logoutRedirect: undefined,
+	});
+	render(<AuthConsumer />);
 
 	await user.click(screen.getByText("Log out"));
 

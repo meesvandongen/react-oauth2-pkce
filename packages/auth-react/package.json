@@ -15,18 +15,22 @@
 		"@testing-library/react": "^16.0.1",
 		"@testing-library/user-event": "^14.5.2",
 		"@types/node": "^25.0.3",
-		"@types/react": ">=16.8.0",
+		"@types/react": "^19.2.7",
 		"@vitest/ui": "^4.0.16",
 		"happy-dom": "^20.0.11",
 		"msw": "^2.12.3",
-		"react": "18.3.1",
-		"react-dom": "18.3.1",
+		"react": "19.2.3",
+		"react-dom": "19.2.3",
 		"tsdown": "^0.18.1",
-		"typescript": ">=4.4.3",
+		"typescript": "^5.9.3",
 		"vitest": "^4.0.16"
 	},
 	"peerDependencies": {
 		"react": ">=16.8.0"
+	},
+	"dependencies": {
+		"@mvd/auth-core": "workspace:*",
+		"use-sync-external-store": "^1.4.0"
 	},
 	"scripts": {
 		"test": "vitest run",

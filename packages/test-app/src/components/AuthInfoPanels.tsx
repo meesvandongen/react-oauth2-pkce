@@ -1,13 +1,14 @@
-import { AuthContext, type IAuthContext } from "@mvd/auth-react";
-import { type ReactNode, useContext, useEffect, useState } from "react";
+import { AuthCoreStore } from "@mvd/auth-core";
+import { useAuth } from "@mvd/auth-react";
+import {  useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
-	children?: ReactNode;
+	store: AuthCoreStore;
+	children?: React.ReactNode;
 }
 
-export function AuthStatusPanel({ children }: AuthStatusPanelProps) {
-	const { token, error, loginInProgress }: IAuthContext =
-		useContext(AuthContext);
+export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
+	const { token, error, loginInProgress } = useAuth(store);
 
 	return (
 		<div data-testid="auth-status">
@@ -28,9 +29,8 @@ export function AuthStatusPanel({ children }: AuthStatusPanelProps) {
 	);
 }
 
-export function AuthTokenDetails() {
-	const { token, tokenData, idToken, idTokenData }: IAuthContext =
-		useContext(AuthContext);
+export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
+	const { token, tokenData, idToken, idTokenData } = useAuth(store);
 
 	return (
 		<div style={{ marginTop: "20px" }}>

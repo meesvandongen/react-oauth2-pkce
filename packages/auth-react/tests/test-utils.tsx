@@ -1,6 +1,6 @@
-import { useContext } from "react";
+import { createAuthCore } from "@mvd/auth-core";
 import { beforeEach, vi } from "vitest";
-import { AuthContext, type TAuthConfig } from "../src";
+import { createUseAuth, type TAuthConfig } from "../src";
 
 beforeEach(() => {
 	localStorage.clear();
@@ -32,21 +32,28 @@ export const authConfig: TAuthConfig = {
 	},
 };
 
-export const AuthConsumer = () => {
-	const { tokenData, logOut, loginInProgress, logIn, token, error } =
-		useContext(AuthContext);
-	return (
-		<>
-			<div>{tokenData?.name}</div>
-			<button type="button" onClick={() => logOut("logoutState")}>
-				Log out
-			</button>
-			<button type="button" onClick={() => logIn("loginState")}>
-				Log in
-			</button>
-			<p data-testid={"loginInProgress"}>{JSON.stringify(loginInProgress)}</p>
-			<p data-testid={"error"}>{error}</p>
-			<p data-testid={"token"}>{token}</p>
-		</>
-	);
-};
+export function createAuthHarness(config: TAuthConfig = authConfig) {
+	const core = createAuthCore(config);
+	const useAuth = createUseAuth(core);
+
+	const AuthConsumer = () => {
+		const { tokenData, logOut, loginInProgress, logIn, token, error } =
+			useAuth();
+		return (
+			<>
+				<div>{tokenData?.name}</div>
+				<button type="button" onClick={() => logOut("logoutState")}>
+					Log out
+				</button>
+				<button type="button" onClick={() => logIn("loginState")}>
+					Log in
+				</button>
+				<p data-testid={"loginInProgress"}>{JSON.stringify(loginInProgress)}</p>
+				<p data-testid={"error"}>{error}</p>
+				<p data-testid={"token"}>{token}</p>
+			</>
+		);
+	};
+
+	return { core, AuthConsumer, useAuth };
+}
