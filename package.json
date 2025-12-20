@@ -1,56 +1,22 @@
 {
-	"name": "package-development",
+	"name": "react-oauth2-pkce-monorepo",
+	"private": true,
 	"version": "0.1.0",
 	"scripts": {
-		"start": "vite",
-		"build": "vite build",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:e2e:ui": "playwright test --ui",
-		"test:e2e:headless": "playwright test",
-		"test:e2e": "playwright test --reporter=list",
-		"test:e2e:debug": "playwright test --debug",
-		"standalone-idp": "bun run ./e2e/msw/standalone.ts",
-		"playwright:install": "playwright install chromium"
-	},
-	"dependencies": {
-		"react": "18.3.1",
-		"react-dom": "18.3.1"
+		"start": "pnpm --filter e2e-test-app start",
+		"build": "pnpm --filter react-oauth2-code-pkce build && pnpm --filter e2e-test-app build",
+		"test": "pnpm --filter react-oauth2-code-pkce test",
+		"test:e2e": "pnpm --filter e2e-tests test",
+		"test:e2e:ui": "pnpm --filter e2e-tests test:ui",
+		"test:e2e:headless": "pnpm --filter e2e-tests test:headless",
+		"test:e2e:debug": "pnpm --filter e2e-tests test:debug",
+		"typecheck": "pnpm --filter \"*\" typecheck",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"playwright:install": "pnpm --filter e2e-tests playwright:install"
 	},
 	"devDependencies": {
-		"cors": "^2.8.5",
-		"express": "^5.2.1",
-		"@mswjs/http-middleware": "^0.10.3",
 		"@biomejs/biome": "^2.3.8",
-		"@mvd/playwright-msw": "^0.4.4",
-		"@playwright/test": "^1.49.0",
-		"@testing-library/dom": "^10.4.0",
-		"@testing-library/jest-dom": "^6.6.3",
-		"@testing-library/react": "^16.0.1",
-		"@testing-library/user-event": "^14.5.2",
-		"@types/cors": "^2.8.19",
-		"@types/express": "^5.0.6",
-		"@types/node": "^25.0.3",
-		"@types/react": "18.3.12",
-		"@vitejs/plugin-react": "^4.3.3",
-		"@vitest/ui": "^4.0.16",
-		"happy-dom": "^20.0.11",
-		"msw": "^2.12.3",
-		"openid-client": "^6.8.1",
-		"typescript": "5.6.3",
-		"vite": "^5.4.10",
-		"vitest": "^4.0.16"
-	},
-	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 1 chrome version",
-			"last 1 firefox version",
-			"last 1 safari version"
-		]
+		"typescript": "5.6.3"
 	}
 }

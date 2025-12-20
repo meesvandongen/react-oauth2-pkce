@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { type TAuthConfig } from "react-oauth2-code-pkce";
 import { useSearchParams } from "react-router-dom";
-import { type TAuthConfig } from "../../../../src/index";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import {
 	AuthStatusPanel,

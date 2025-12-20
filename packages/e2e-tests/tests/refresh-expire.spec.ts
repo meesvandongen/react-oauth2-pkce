@@ -10,7 +10,7 @@ test("calls onRefreshTokenExpire when refresh token expires", async ({
 	oidc.refreshTokenLifetimeSeconds = 10; // 10 seconds
 	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds
 
-	await page.goto("/configurable");
+	await page.goto("/configurable?onRefreshTokenExpire=called");
 	await page.clock.install();
 	await login(page);
 	await expectAuthenticated(page);
@@ -32,7 +32,7 @@ test("calls onRefreshTokenExpire when refresh fails with 400", async ({
 }) => {
 	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds
 
-	await page.goto("/configurable");
+	await page.goto("/configurable?onRefreshTokenExpire=called");
 	await page.clock.install();
 	await login(page);
 	await expectAuthenticated(page);

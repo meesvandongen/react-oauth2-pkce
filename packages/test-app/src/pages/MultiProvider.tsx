@@ -1,4 +1,4 @@
-import { AuthProvider, type TAuthConfig } from "../../../../src/index";
+import { AuthProvider, type TAuthConfig } from "react-oauth2-code-pkce";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import { AuthStatusPanel } from "../components/AuthInfoPanels";
 
