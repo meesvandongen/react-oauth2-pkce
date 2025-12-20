@@ -1,5 +1,5 @@
+import { type TAuthConfig } from "@mvd/auth-react";
 import { useEffect, useState } from "react";
-import { type TAuthConfig } from "react-oauth2-code-pkce";
 import { useSearchParams } from "react-router-dom";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import {

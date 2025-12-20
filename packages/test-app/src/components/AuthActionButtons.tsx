@@ -1,6 +1,6 @@
+import { AuthContext, type IAuthContext } from "@mvd/auth-react";
 import type { CSSProperties } from "react";
 import { useContext } from "react";
-import { AuthContext, type IAuthContext } from "react-oauth2-code-pkce";
 
 interface AuthActionButtonsProps {
 	className?: string;

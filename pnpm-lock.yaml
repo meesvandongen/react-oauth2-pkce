@@ -98,15 +98,15 @@ importers:
 
   packages/test-app:
     dependencies:
+      '@mvd/auth-react':
+        specifier: workspace:*
+        version: link:../react-oauth2-pkce
       react:
         specifier: 18.3.1
         version: 18.3.1
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
-      react-oauth2-code-pkce:
-        specifier: workspace:*
-        version: link:../react-oauth2-pkce
       react-router-dom:
         specifier: ^6.28.0
         version: 6.30.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

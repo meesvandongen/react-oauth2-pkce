@@ -1,5 +1,5 @@
-# react-oauth2-code-pkce
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/soofstad/react-oauth2-pkce/blob/main/LICENSE) ![NPM Version](https://img.shields.io/npm/v/react-oauth2-code-pkce?logo=npm&label=version) ![NPM Downloads](https://img.shields.io/npm/d18m/react-oauth2-code-pkce?logo=npm) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/react-oauth2-code-pkce?label=size) ![CI](https://github.com/soofstad/react-oauth2-pkce/actions/workflows/tests.yaml/badge.svg)
+# @mvd/auth-react
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/soofstad/react-oauth2-pkce/blob/main/LICENSE) ![NPM Version](https://img.shields.io/npm/v/@mvd/auth-react?logo=npm&label=version) ![NPM Downloads](https://img.shields.io/npm/d18m/@mvd/auth-react?logo=npm) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@mvd/auth-react?label=size) ![CI](https://github.com/soofstad/react-oauth2-pkce/actions/workflows/tests.yaml/badge.svg)
 
 React package for OAuth2 Authorization Code flow with PKCE
 
@@ -28,7 +28,7 @@ Long version;
 ## Example
 
 ```tsx
-import { useAuthContext, AuthProvider, TAuthConfig, TRefreshTokenExpiredEvent } from "react-oauth2-code-pkce"
+import { useAuthContext, AuthProvider, TAuthConfig, TRefreshTokenExpiredEvent } from "@mvd/auth-react"
 
 const authConfig: TAuthConfig = {
   clientId: 'myClientID',
@@ -61,10 +61,10 @@ For more advanced examples, see `./examples/`.
 
 ## Install
 
-The package is available on npmjs.com here; https://www.npmjs.com/package/react-oauth2-code-pkce
+The package is available on npmjs.com here; https://www.npmjs.com/package/@mvd/auth-react
 
 ```bash
-npm install react-oauth2-code-pkce
+npm install @mvd/auth-react
 ```
 
 ## API
@@ -99,7 +99,7 @@ interface IAuthContext {
 
 ### Configuration parameters
 
-__react-oauth2-code-pkce__'s goal is to "just work" with any authentication provider that either
+__@mvd/auth-react__'s goal is to "just work" with any authentication provider that either
 supports the [OAuth2](https://datatracker.ietf.org/doc/html/rfc7636) or [OpenID Connect](https://openid.net/developers/specs/) (OIDC) standards.  
 However, many authentication providers are not following these standards, or have extended them. 
 With this in mind, if you are experiencing any problems, a good place to start is to see if the provider expects some custom parameters.
@@ -148,7 +148,7 @@ type TAuthConfig = {
   // If set to false, you need to call the "logIn()" function to log in (e.g. with a "Log in" button)
   autoLogin?: boolean  // default: true
   // Store login state in 'localStorage' or 'sessionStorage'
-  // If set to 'session', no login state is persisted by 'react-oauth2-code-pkce` when the browser closes.
+  // If set to 'session', no login state is persisted by '@mvd/auth-react` when the browser closes.
   // NOTE: Many authentication servers will keep the client logged in by cookies. You should therefore use 
   // the logOut() function to properly log out the client. Or configure your server not to issue cookies.
   storage?: 'local' | 'session'  // default: 'local'
@@ -201,10 +201,10 @@ This can be solved by marking the module with `use client` and importing the com
 ```tsx
 'use client'
 import dynamic from 'next/dynamic'
-import {TAuthConfig, TRefreshTokenExpiredEvent, useAuthContext} from 'react-oauth2-code-pkce'
+import {TAuthConfig, TRefreshTokenExpiredEvent, useAuthContext} from '@mvd/auth-react'
 
 const AuthProvider = dynamic(
-    ()=> import("react-oauth2-code-pkce")
+    ()=> import("@mvd/auth-react")
         .then((mod) => mod.AuthProvider),
     {ssr: false}
 )

@@ -1,5 +1,5 @@
 {
-	"name": "react-oauth2-code-pkce",
+	"name": "@mvd/auth-react",
 	"version": "1.23.2",
 	"description": "Provider agnostic react package for OAuth2 Authorization Code flow with PKCE",
 	"exports": {

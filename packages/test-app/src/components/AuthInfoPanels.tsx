@@ -1,5 +1,5 @@
+import { AuthContext, type IAuthContext } from "@mvd/auth-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
-import { AuthContext, type IAuthContext } from "react-oauth2-code-pkce";
 
 interface AuthStatusPanelProps {
 	children?: ReactNode;

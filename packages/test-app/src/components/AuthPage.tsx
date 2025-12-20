@@ -1,5 +1,5 @@
+import { AuthProvider, type TAuthConfig } from "@mvd/auth-react";
 import type { PropsWithChildren, ReactNode } from "react";
-import { AuthProvider, type TAuthConfig } from "react-oauth2-code-pkce";
 
 interface AuthPageProps extends PropsWithChildren {
 	title: string;
