@@ -8,7 +8,7 @@ test("opens popup for login", async ({ context, page, network }) => {
 			return HttpResponse.html("<h1>Login Page</h1>");
 		}),
 	);
-	await page.goto("http://localhost:3010/basic");
+	await page.goto("http://localhost:3010/configurable");
 	const popupPromise = page.waitForEvent("popup");
 	await page.getByTestId("login-popup-button").click();
 
@@ -16,14 +16,14 @@ test("opens popup for login", async ({ context, page, network }) => {
 	await expect(popup.getByText("Login Page")).toBeVisible();
 });
 
-test.skip("authenticates via popup", async ({ page }) => {
-	await page.goto("http://localhost:3010/basic");
+test("authenticates via popup", async ({ page }) => {
+	await page.goto("http://localhost:3010/configurable?storage=local");
 	await page.getByTestId("login-popup-button").click();
 	await expectAuthenticated(page);
 });
 
 test("falls back to redirect when popup is blocked", async ({ page }) => {
-	await page.goto("http://localhost:3010/basic");
+	await page.goto("http://localhost:3010/configurable");
 
 	await page.evaluate(() => {
 		window.open = () => null;

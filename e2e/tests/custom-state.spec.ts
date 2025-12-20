@@ -3,7 +3,7 @@ import { expect, test } from "../playwright.setup";
 import { expectAuthenticated, login } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable?logout=true");
 });
 
 test("logs in with default state from config", async ({ page }) => {

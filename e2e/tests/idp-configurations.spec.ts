@@ -18,7 +18,7 @@ test("handles response without refresh_token", async ({ page }) => {
 		}
 	});
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 });
@@ -42,7 +42,7 @@ test("handles KeyCloak style refresh_expires_in", async ({ page }) => {
 		}
 	});
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 });
@@ -65,7 +65,7 @@ test("handles string expires_in", async ({ page }) => {
 		}
 	});
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 });
@@ -89,7 +89,7 @@ test("handles extra custom fields in response", async ({ page }) => {
 		}
 	});
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 });
@@ -111,7 +111,7 @@ test("handles invalid JWT gracefully", async ({ page }) => {
 		}
 	});
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 });

@@ -15,7 +15,7 @@ test("shows error when token endpoint returns 401", async ({
 		}),
 	);
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 });
@@ -27,7 +27,7 @@ test("shows error for malformed JSON response", async ({ page, network }) => {
 		}),
 	);
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 });
@@ -39,7 +39,7 @@ test("shows error for empty response", async ({ page, network }) => {
 		}),
 	);
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 });
@@ -50,7 +50,7 @@ test("shows error for HTML error page", async ({ page, network }) => {
 			return HttpResponse.html("<h1>Server Error</h1>", { status: 500 });
 		}),
 	);
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 });
@@ -69,7 +69,7 @@ test("shows error from authorization endpoint", async ({ page, network }) => {
 		}),
 	);
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 });

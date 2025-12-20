@@ -9,11 +9,7 @@ import {
 	logout,
 } from "./helpers";
 
-test.skip("rejects mismatched state parameter", async ({
-	page,
-	network,
-	oidc,
-}) => {
+test("rejects mismatched state parameter", async ({ page, network, oidc }) => {
 	network.use(
 		http.get("**/auth", async ({ request }) => {
 			const redirectUri = new URL(oidc.authorize(request));
@@ -21,20 +17,20 @@ test.skip("rejects mismatched state parameter", async ({
 			return HttpResponse.redirect(redirectUri, 302);
 		}),
 	);
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await page.getByTestId("login-custom-state-button").click();
 	await expectAuthError(page);
 	await expectNotAuthenticated(page);
 });
 
 test("ignores code without active login flow", async ({ page }) => {
-	await page.goto("/basic?code=injected&state=injected");
+	await page.goto("/configurable?code=injected&state=injected");
 	await expectNotAuthenticated(page);
 	await expectNoAuthError(page);
 });
 
 test("uses S256 for code_challenge_method", async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 	const tokenData = JSON.parse(
@@ -44,7 +40,7 @@ test("uses S256 for code_challenge_method", async ({ page }) => {
 });
 
 test("generates unique code_challenge per login", async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 	const tokenData = JSON.parse(

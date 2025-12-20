@@ -3,14 +3,14 @@ import { expect, test } from "../playwright.setup";
 import { expectAuthenticated, login, logout } from "./helpers";
 
 test("displays storage contents after login", async ({ page }) => {
-	await page.goto("/localstorage");
+	await page.goto("/configurable?storage=local");
 	await expectPageToNotHaveTokenInStorage(page);
 	await login(page);
 	await expectPageToHaveTokenInStorage(page);
 });
 
-test.skip("clears storage on logout", async ({ page }) => {
-	await page.goto("/localstorage");
+test("clears storage on logout", async ({ page }) => {
+	await page.goto("/configurable?storage=local");
 	await expectPageToNotHaveTokenInStorage(page);
 	await login(page);
 	await expectPageToHaveTokenInStorage(page);
@@ -19,23 +19,23 @@ test.skip("clears storage on logout", async ({ page }) => {
 });
 
 test("persists authentication in new tab", async ({ context, page }) => {
-	await page.goto("http://localhost:3010/localstorage");
+	await page.goto("http://localhost:3010/configurable?storage=local");
 	await login(page);
 	await expectAuthenticated(page);
 
 	const page2 = await context.newPage();
-	await page2.goto("http://localhost:3010/localstorage");
+	await page2.goto("http://localhost:3010/configurable?storage=local");
 	await expectAuthenticated(page2);
 });
 
 async function expectPageToHaveTokenInStorage(page: Page) {
 	await expect(page.getByTestId("local-storage-entries")).toHaveText(
-		/localstorage_token/,
+		/config_token/,
 	);
 }
 
 async function expectPageToNotHaveTokenInStorage(page: Page) {
 	await expect(page.getByTestId("local-storage-entries")).not.toHaveText(
-		/localstorage_token/,
+		/config_token/,
 	);
 }

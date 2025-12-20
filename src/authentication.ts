@@ -11,8 +11,9 @@ import type {
 	TTokenResponse,
 } from "./types";
 
-const codeVerifierStorageKey = "PKCE_code_verifier";
-const stateStorageKey = "ROCP_auth_state";
+export const codeVerifierStorageKey = "PKCE_code_verifier";
+export const stateStorageKey = "ROCP_auth_state";
+export const urlHashStorageKey = "url_hash";
 
 export async function redirectToLogin(
 	config: TInternalConfig,
@@ -48,10 +49,18 @@ export async function redirectToLogin(
 		}
 
 		storage.removeItem(stateStorageKey);
+		storage.removeItem(config.storageKeyPrefix + urlHashStorageKey);
 		const state = customState ?? config.state;
 		if (state) {
 			storage.setItem(stateStorageKey, state);
 			params.append("state", state);
+		}
+
+		if (window.location.hash) {
+			storage.setItem(
+				config.storageKeyPrefix + urlHashStorageKey,
+				window.location.hash,
+			);
 		}
 
 		const loginUrl = `${config.authorizationEndpoint}?${params.toString()}`;
@@ -160,7 +169,9 @@ export const fetchWithRefreshToken = (props: {
 		redirect_uri: config.redirectUri,
 		...config.extraTokenParameters,
 	};
-	if (config.refreshWithScope) refreshRequest.scope = config.scope;
+	if (config.refreshWithScope) {
+		refreshRequest.scope = config.scope;
+	}
 	return postTokenRequest(
 		config.tokenEndpoint,
 		refreshRequest,

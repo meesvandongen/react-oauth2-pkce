@@ -7,7 +7,7 @@ import {
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable?logout=true");
 });
 
 test("shows not authenticated initially", async ({ page }) => {

@@ -1,18 +1,15 @@
 import { HttpResponse, http } from "msw";
-import { TokenEndpointSuccess } from "../msw/mockOidcProvider";
 import { expect, test } from "../playwright.setup";
 import {
 	expectAuthError,
 	expectAuthenticated,
-	expectLoginInProgress,
 	expectNoAuthError,
-	expectNotAuthenticated,
 	login,
 } from "./helpers";
 
 test("refresh after expiry", async ({ page, oidc }) => {
 	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
-	await page.goto("/basic");
+	await page.goto("/configurable");
 
 	await page.clock.install();
 	await login(page);
@@ -35,7 +32,7 @@ test("refresh after expiry", async ({ page, oidc }) => {
 
 test("Logs in again when refresh token expires", async ({ page, oidc }) => {
 	oidc.refreshTokenLifetimeSeconds = 10 * 60; // 10 minutes
-	await page.goto("/basic");
+	await page.goto("/configurable");
 
 	await page.clock.install();
 	await login(page);
@@ -61,7 +58,7 @@ test("Logs in again when refresh token is invalid", async ({
 }) => {
 	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await page.clock.install();
 	await login(page);
 	await expectAuthenticated(page);
@@ -93,7 +90,7 @@ test("re-use refresh token", async ({ page, network, oidc }) => {
 	oidc.refreshTokenReuse = true;
 	oidc.refreshTokenRotation = false;
 	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
-	await page.goto("/basic");
+	await page.goto("/configurable");
 
 	await page.clock.install();
 	await login(page);
@@ -132,7 +129,7 @@ test("Retries refresh after transient error", async ({
 	oidc,
 }) => {
 	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
-	await page.goto("/basic");
+	await page.goto("/configurable");
 
 	await page.clock.install();
 	await login(page);

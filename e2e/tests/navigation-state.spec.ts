@@ -15,7 +15,7 @@ test("handles back navigation from IdP", async ({ page, network }) => {
 		}),
 	);
 
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await page.waitForURL(/.*localhost:5556\/idp.*/);
 
@@ -25,17 +25,17 @@ test("handles back navigation from IdP", async ({ page, network }) => {
 });
 
 test("maintains auth when navigating away and back", async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
 
 	await page.goto("/");
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await expectAuthenticated(page);
 });
 
-test.skip("handles hash in URL", async ({ page }) => {
-	await page.goto("/basic#section");
+test("handles hash in URL", async ({ page }) => {
+	await page.goto("/configurable#section");
 	await login(page);
 	await expectAuthenticated(page);
 
@@ -43,7 +43,7 @@ test.skip("handles hash in URL", async ({ page }) => {
 });
 
 test("ignores unrelated URL parameters", async ({ page }) => {
-	await page.goto("/basic?unrelated=param");
+	await page.goto("/configurable?unrelated=param");
 	await expectNotAuthenticated(page);
 
 	await login(page);

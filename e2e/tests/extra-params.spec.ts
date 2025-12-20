@@ -4,7 +4,7 @@ import { expect, test } from "../playwright.setup";
 import { expectAuthenticated, login } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/extraparams");
+	await page.goto("/configurable?extraParams=true&logout=true");
 });
 
 async function parseTokenData(page: Page) {

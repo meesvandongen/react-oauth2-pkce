@@ -8,7 +8,7 @@ import {
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/basic");
+	await page.goto("/configurable?logout=true");
 });
 
 test("can log out", async ({ page }) => {
@@ -38,8 +38,7 @@ test("logs out with full parameters", async ({ page }) => {
 });
 
 test("stays on same page after logout", async ({ page }) => {
-	await page.goto("/basic");
 	await login(page);
 	await logout(page);
-	expect(page.url()).toContain("/basic");
+	expect(page.url()).toContain("/configurable");
 });

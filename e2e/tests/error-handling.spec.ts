@@ -15,7 +15,7 @@ test("shows error and stays unauthenticated for invalid authorization code", asy
 			return HttpResponse.redirect(redirectUri.toString(), 302);
 		}),
 	);
-	await page.goto("/basic");
+	await page.goto("/configurable");
 	await login(page);
 	await expectAuthError(page);
 	await expectNotAuthenticated(page);

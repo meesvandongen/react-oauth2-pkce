@@ -5,6 +5,7 @@ import {
 	fetchWithRefreshToken,
 	redirectToLogin,
 	redirectToLogout,
+	urlHashStorageKey,
 	validateState,
 } from "./authentication";
 import { decodeAccessToken, decodeIdToken, decodeJWT } from "./decodeJWT";
@@ -90,8 +91,8 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 
 	function clearStorage() {
 		setRefreshToken(undefined);
-		setToken("");
-		setTokenExpire(epochAtSecondsFromNow(FALLBACK_EXPIRE_TIME));
+		setToken(undefined as unknown as string);
+		setTokenExpire(undefined as unknown as number);
 		setRefreshTokenExpire(undefined);
 		setIdToken(undefined);
 		setLoginInProgress(false);
@@ -304,6 +305,8 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 				} catch (e: unknown) {
 					console.error(e);
 					setError((e as Error).message);
+					setLoginInProgress(false);
+					return;
 				}
 				// Request tokens from auth server with the auth code
 				fetchTokens(config)
@@ -321,11 +324,17 @@ export const AuthProvider = ({ authConfig, children }: IAuthProvider) => {
 					})
 					.finally(() => {
 						if (config.clearURL) {
+							const storage =
+								config.storage === "session" ? sessionStorage : localStorage;
+							const hash = storage.getItem(
+								config.storageKeyPrefix + urlHashStorageKey,
+							);
+							storage.removeItem(config.storageKeyPrefix + urlHashStorageKey);
 							// Clear ugly url params
 							window.history.replaceState(
 								null,
 								"",
-								`${window.location.pathname}${window.location.hash}`,
+								`${window.location.pathname}${hash || window.location.hash}`,
 							);
 						}
 						setLoginInProgress(false);
