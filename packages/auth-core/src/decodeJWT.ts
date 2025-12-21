@@ -1,9 +1,9 @@
-import type { TTokenData } from "./types";
+import type { TokenData } from "./types";
 
 /**
  * Decodes the base64 encoded JWT. Returns a TToken.
  */
-export const decodeJWT = (token: string): TTokenData => {
+export const decodeJWT = (token: string): TokenData => {
 	try {
 		const base64Url = token.split(".")[1];
 		const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -25,7 +25,7 @@ export const decodeJWT = (token: string): TTokenData => {
 
 export const decodeAccessToken = (
 	token: string | null | undefined,
-): TTokenData | undefined => {
+): TokenData | undefined => {
 	if (!token || !token.length) return undefined;
 	try {
 		return decodeJWT(token);
@@ -36,7 +36,7 @@ export const decodeAccessToken = (
 
 export const decodeIdToken = (
 	idToken: string | null | undefined,
-): TTokenData | undefined => {
+): TokenData | undefined => {
 	if (!idToken || !idToken.length) return undefined;
 	try {
 		return decodeJWT(idToken);

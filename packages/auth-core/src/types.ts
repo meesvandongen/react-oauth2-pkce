@@ -2,32 +2,32 @@
 // Source: https://www.emmanuelgautier.com/blog/snippets/typescript-required-properties
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 
-interface TTokenRqBase {
+interface TokenRqBase {
 	grant_type: string;
 	client_id: string;
 	redirect_uri: string;
 }
 
-export interface TTokenRequestWithCodeAndVerifier extends TTokenRqBase {
+export interface TokenRequestWithCodeAndVerifier extends TokenRqBase {
 	code: string;
 	code_verifier: string;
 }
 
-export interface TTokenRequestForRefresh extends TTokenRqBase {
+export interface TokenRequestForRefresh extends TokenRqBase {
 	scope?: string;
 	refresh_token: string;
 }
 
-export type TTokenRequest =
-	| TTokenRequestWithCodeAndVerifier
-	| TTokenRequestForRefresh;
+export type TokenRequest =
+	| TokenRequestWithCodeAndVerifier
+	| TokenRequestForRefresh;
 
-export type TTokenData = {
+export type TokenData = {
 	// biome-ignore lint: It really can be `any` (almost)
 	[x: string]: any;
 };
 
-export type TTokenResponse = {
+export type TokenResponse = {
 	access_token: string;
 	scope: string;
 	token_type: string;
@@ -38,19 +38,19 @@ export type TTokenResponse = {
 	id_token?: string;
 };
 
-export type TLoginMethod = "redirect" | "replace" | "popup";
+export type LoginMethod = "redirect" | "replace" | "popup";
 
-export type TPopupPosition = {
+export type PopupPosition = {
 	left: number;
 	top: number;
 	width: number;
 	height: number;
 };
 
-export type TPrimitiveRecord = { [key: string]: string | boolean | number };
+export type PrimitiveRecord = { [key: string]: string | boolean | number };
 
 // Input from users of the package, some optional values
-export type TAuthConfig = {
+export type AuthConfig = {
 	clientId: string;
 	authorizationEndpoint: string;
 	tokenEndpoint: string;
@@ -59,16 +59,13 @@ export type TAuthConfig = {
 	state?: string;
 	logoutEndpoint?: string;
 	logoutRedirect?: string;
-	preLogin?: () => void;
-	postLogin?: () => void;
-	loginMethod?: TLoginMethod;
-	onRefreshTokenExpire?: (event: TRefreshTokenExpiredEvent) => void;
+	loginMethod?: LoginMethod;
 	decodeToken?: boolean;
 	autoLogin?: boolean;
 	clearURL?: boolean;
-	extraAuthParameters?: TPrimitiveRecord;
-	extraTokenParameters?: TPrimitiveRecord;
-	extraLogoutParameters?: TPrimitiveRecord;
+	extraAuthParameters?: PrimitiveRecord;
+	extraTokenParameters?: PrimitiveRecord;
+	extraLogoutParameters?: PrimitiveRecord;
 	tokenExpiresIn?: number;
 	refreshTokenExpiresIn?: number;
 	refreshTokenExpiryStrategy?: "renewable" | "absolute";
@@ -78,21 +75,13 @@ export type TAuthConfig = {
 	tokenRequestCredentials?: RequestCredentials;
 };
 
-export type TRefreshTokenExpiredEvent = {
-	logIn: TLogInFunction;
-	/** @deprecated Use `logIn` instead. Will be removed in a future version. */
-	login: TLogInFunction;
+export type RefreshTokenExpiredEvent = {
+	login: (options?: LoginOptions) => void;
 };
 
-type TLogInFunction = (
-	state?: string,
-	additionalParameters?: TPrimitiveRecord,
-	method?: TLoginMethod,
-) => void;
-
 // The AuthProviders internal config type. All values will be set by user provided, or default values
-export type TInternalConfig = WithRequired<
-	TAuthConfig,
+export type InternalConfig = WithRequired<
+	AuthConfig,
 	| "loginMethod"
 	| "decodeToken"
 	| "autoLogin"
@@ -103,3 +92,35 @@ export type TInternalConfig = WithRequired<
 	| "refreshWithScope"
 	| "tokenRequestCredentials"
 >;
+
+export type InternalState = {
+	token?: string;
+	tokenExpire?: number;
+	refreshToken?: string;
+	refreshTokenExpire?: number;
+	idToken?: string;
+	loginInProgress: boolean;
+	refreshInProgress: boolean;
+	loginMethod: LoginMethod;
+	error: string | null;
+};
+
+export type AuthSnapshot = {
+	token?: string;
+	tokenData?: TokenData;
+	idToken?: string;
+	idTokenData?: TokenData;
+	error: string | null;
+	loginInProgress: boolean;
+};
+
+export type LoginOptions = {
+	state?: string;
+	additionalParameters?: PrimitiveRecord;
+	method?: LoginMethod;
+};
+export type LogoutOptions = {
+	state?: string;
+	logoutHint?: string;
+	additionalParameters?: PrimitiveRecord;
+};

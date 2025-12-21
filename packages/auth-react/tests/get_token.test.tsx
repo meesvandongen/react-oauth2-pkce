@@ -1,5 +1,5 @@
+import { TokenResponse } from "@mvd/auth-core";
 import { render, waitFor } from "@testing-library/react";
-import type { TTokenResponse } from "../src/types";
 import { authConfig, createAuthHarness } from "./test-utils";
 
 // @ts-ignore
@@ -7,7 +7,7 @@ global.fetch = vi.fn(() =>
 	Promise.resolve({
 		ok: true,
 		json: () =>
-			Promise.resolve<TTokenResponse>({
+			Promise.resolve<TokenResponse>({
 				scope: "value",
 				refresh_token: "1234",
 				token_type: "dummy",

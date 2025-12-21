@@ -1,13 +1,6 @@
-import type { TInternalConfig } from "@mvd/auth-core";
-import {
-	decodeJWT,
-	epochAtSecondsFromNow,
-	epochTimeIsPast,
-	FetchError,
-	fetchWithRefreshToken,
-} from "@mvd/auth-core";
+import type { InternalConfig } from "../src/types";
 
-const authConfig: TInternalConfig = {
+const authConfig: InternalConfig = {
 	autoLogin: false,
 	decodeToken: false,
 	clientId: "myClientID",

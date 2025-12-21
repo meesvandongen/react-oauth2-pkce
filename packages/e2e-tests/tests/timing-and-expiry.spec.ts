@@ -32,7 +32,7 @@ test("refresh after expiry", async ({ page, oidc }) => {
 
 test("Logs in again when refresh token expires", async ({ page, oidc }) => {
 	oidc.refreshTokenLifetimeSeconds = 10 * 60; // 10 minutes
-	await page.goto("/configurable");
+	await page.goto("/configurable?onRefreshTokenExpire=login");
 
 	await page.clock.install();
 	await login(page);

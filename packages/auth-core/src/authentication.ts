@@ -1,121 +1,40 @@
 import { postWithXForm } from "./httpUtils";
-import { generateCodeChallenge, generateRandomString } from "./pkceUtils";
-import { calculatePopupPosition } from "./popupUtils";
 import type {
-	TInternalConfig,
-	TLoginMethod,
-	TPrimitiveRecord,
-	TTokenRequest,
-	TTokenRequestForRefresh,
-	TTokenRequestWithCodeAndVerifier,
-	TTokenResponse,
+	InternalConfig,
+	PrimitiveRecord,
+	TokenRequest,
+	TokenRequestForRefresh,
+	TokenRequestWithCodeAndVerifier,
+	TokenResponse,
 } from "./types";
 
 export const codeVerifierStorageKey = "PKCE_code_verifier";
 export const stateStorageKey = "ROCP_auth_state";
 export const urlHashStorageKey = "url_hash";
 
-export async function redirectToLogin(
-	config: TInternalConfig,
-	customState?: string,
-	additionalParameters?: TPrimitiveRecord,
-	method: TLoginMethod = "redirect",
-): Promise<void> {
-	const storage = config.storage === "session" ? sessionStorage : localStorage;
-	const navigationMethod = method === "replace" ? "replace" : "assign";
-
-	// Create and store a random string in storage, used as the 'code_verifier'
-	const codeVerifier = generateRandomString(96);
-	// Prefix the code verifier key name to prevent multi-application collisions
-	const codeVerifierStorageKeyName =
-		config.storageKeyPrefix + codeVerifierStorageKey;
-	storage.setItem(codeVerifierStorageKeyName, codeVerifier);
-
-	// Hash and Base64URL encode the code_verifier, used as the 'code_challenge'
-	return generateCodeChallenge(codeVerifier).then(async (codeChallenge) => {
-		// Set query parameters and redirect user to OAuth2 authentication endpoint
-		const params = new URLSearchParams({
-			response_type: "code",
-			client_id: config.clientId,
-			redirect_uri: config.redirectUri,
-			code_challenge: codeChallenge,
-			code_challenge_method: "S256",
-			...config.extraAuthParameters,
-			...additionalParameters,
-		});
-
-		if (config.scope !== undefined && !params.has("scope")) {
-			params.append("scope", config.scope);
-		}
-
-		storage.removeItem(stateStorageKey);
-		storage.removeItem(config.storageKeyPrefix + urlHashStorageKey);
-		const state = customState ?? config.state;
-		if (state) {
-			storage.setItem(stateStorageKey, state);
-			params.append("state", state);
-		}
-
-		if (window.location.hash) {
-			storage.setItem(
-				config.storageKeyPrefix + urlHashStorageKey,
-				window.location.hash,
-			);
-		}
-
-		const loginUrl = `${config.authorizationEndpoint}?${params.toString()}`;
-
-		// Call any preLogin function in authConfig
-
-		config?.preLogin?.();
-
-		if (method === "popup") {
-			const { width, height, left, top } = calculatePopupPosition(600, 600);
-			const handle: null | WindowProxy = window.open(
-				loginUrl,
-				"loginPopup",
-				`width=${width},height=${height},top=${top},left=${left}`,
-			);
-			if (handle) return;
-			console.warn(
-				"Popup blocked. Redirecting to login page. Disable popup blocker to use popup login.",
-			);
-		}
-		window.location[navigationMethod](loginUrl);
-	});
-}
-
 // This is called a "type predicate". Which allow us to know which kind of response we got, in a type safe way.
-function isTokenResponse(
-	body: unknown | TTokenResponse,
-): body is TTokenResponse {
-	return (body as TTokenResponse).access_token !== undefined;
+function isTokenResponse(body: unknown | TokenResponse): body is TokenResponse {
+	return (body as TokenResponse).access_token !== undefined;
 }
 
-function postTokenRequest(
+async function postTokenRequest(
 	tokenEndpoint: string,
-	tokenRequest: TTokenRequest,
+	tokenRequest: TokenRequest,
 	credentials: RequestCredentials,
-): Promise<TTokenResponse> {
-	return postWithXForm({
+): Promise<TokenResponse> {
+	const response = await postWithXForm({
 		url: tokenEndpoint,
 		request: tokenRequest,
 		credentials: credentials,
-	}).then((response) => {
-		return response
-			.json()
-			.then((body: TTokenResponse | unknown): TTokenResponse => {
-				if (isTokenResponse(body)) {
-					return body;
-				}
-				throw Error(JSON.stringify(body));
-			});
 	});
+	const body = await response.json();
+	if (isTokenResponse(body)) {
+		return body;
+	}
+	throw Error(JSON.stringify(body));
 }
 
-export const fetchTokens = (
-	config: TInternalConfig,
-): Promise<TTokenResponse> => {
+export const fetchTokens = (config: InternalConfig): Promise<TokenResponse> => {
 	const storage = config.storage === "session" ? sessionStorage : localStorage;
 	/*
     The browser has been redirected from the authentication endpoint with
@@ -140,7 +59,7 @@ export const fetchTokens = (
 		);
 	}
 
-	const tokenRequest: TTokenRequestWithCodeAndVerifier = {
+	const tokenRequest: TokenRequestWithCodeAndVerifier = {
 		grant_type: "authorization_code",
 		code: authCode,
 		client_id: config.clientId,
@@ -156,11 +75,11 @@ export const fetchTokens = (
 };
 
 export const fetchWithRefreshToken = (props: {
-	config: TInternalConfig;
+	config: InternalConfig;
 	refreshToken: string;
-}): Promise<TTokenResponse> => {
+}): Promise<TokenResponse> => {
 	const { config, refreshToken } = props;
-	const refreshRequest: TTokenRequestForRefresh = {
+	const refreshRequest: TokenRequestForRefresh = {
 		grant_type: "refresh_token",
 		refresh_token: refreshToken,
 		client_id: config.clientId,
@@ -178,13 +97,13 @@ export const fetchWithRefreshToken = (props: {
 };
 
 export function redirectToLogout(
-	config: TInternalConfig,
+	config: InternalConfig,
 	token: string,
 	refresh_token?: string,
 	idToken?: string,
 	state?: string,
 	logoutHint?: string,
-	additionalParameters?: TPrimitiveRecord,
+	additionalParameters?: PrimitiveRecord,
 ) {
 	const params = new URLSearchParams({
 		token: refresh_token || token,
@@ -195,15 +114,21 @@ export function redirectToLogout(
 		...config.extraLogoutParameters,
 		...additionalParameters,
 	});
-	if (idToken) params.append("id_token_hint", idToken);
-	if (state) params.append("state", state);
-	if (logoutHint) params.append("logout_hint", logoutHint);
+	if (idToken) {
+		params.append("id_token_hint", idToken);
+	}
+	if (state) {
+		params.append("state", state);
+	}
+	if (logoutHint) {
+		params.append("logout_hint", logoutHint);
+	}
 	window.location.assign(`${config.logoutEndpoint}?${params.toString()}`);
 }
 
 export function validateState(
 	urlParams: URLSearchParams,
-	storageType: TInternalConfig["storage"],
+	storageType: InternalConfig["storage"],
 ) {
 	const storage = storageType === "session" ? sessionStorage : localStorage;
 	const receivedState = urlParams.get("state");

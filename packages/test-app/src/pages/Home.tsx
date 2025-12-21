@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
-export function Home() {
+export function Component() {
 	return (
 		<div>
 			<h1>OAuth2 PKCE Test Application</h1>

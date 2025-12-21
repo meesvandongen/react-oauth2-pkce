@@ -36,7 +36,7 @@ const authConfig: TAuthConfig = {
   tokenEndpoint: 'https://myAuthProvider.com/token',
   redirectUri: 'http://localhost:3000/',
   scope: 'someScope openid',
-  onRefreshTokenExpire: (event: TRefreshTokenExpiredEvent) => event.logIn(undefined, undefined, "popup"),
+  onRefreshTokenExpire: (event: TRefreshTokenExpiredEvent) => event.login(undefined, undefined, "popup"),
 }
 
 const UserInfo = (): JSX.Element => {
@@ -82,10 +82,10 @@ interface IAuthContext {
   // Function to trigger login. 
   // If you want to use 'state', you might want to set 'clearURL' configuration parameter to 'false'.
   // Note that most browsers block popups by default. The library will print a warning and fallback to redirect if the popup is blocked
-  logIn: (state?: string, additionalParameters?: { [key: string]: string | boolean | number }, method: TLoginMethod = 'redirect') => void
+  login: (state?: string, additionalParameters?: { [key: string]: string | boolean | number }, method: TLoginMethod = 'redirect') => void
   // Function to trigger logout from authentication provider. You may provide optional 'state', and 'logout_hint' values.
   // See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout for details.
-  logOut: (state?: string, logoutHint?: string, additionalParameters?: { [key: string]: string | boolean | number }) => void
+  logout: (state?: string, logoutHint?: string, additionalParameters?: { [key: string]: string | boolean | number }) => void
   // Keeps any errors that occured during login, token fetching/refreshing, decoding, etc.. 
   error: string | null
   // The idToken, if it was returned along with the access token
@@ -123,7 +123,7 @@ type TAuthConfig = {
   redirectUri: string  // Required
   // Which scopes to request for the auth token
   scope?: string  // default: ''
-  // Optional state value. Will often make more sense to provide the state in a call to the 'logIn()' function
+  // Optional state value. Will often make more sense to provide the state in a call to the 'login()' function
   state?: string // default: null
   // Which URL to call for logging out of the auth provider
   logoutEndpoint?: string  // default: null
@@ -145,12 +145,12 @@ type TAuthConfig = {
   // If `false`, 'tokenData' will be 'undefined' from the <AuthContext>
   decodeToken?: boolean  // default: true
   // By default, the package will automatically redirect the user to the login server if not already logged in.
-  // If set to false, you need to call the "logIn()" function to log in (e.g. with a "Log in" button)
+  // If set to false, you need to call the "login()" function to log in (e.g. with a "Log in" button)
   autoLogin?: boolean  // default: true
   // Store login state in 'localStorage' or 'sessionStorage'
   // If set to 'session', no login state is persisted by '@mvd/auth-react` when the browser closes.
   // NOTE: Many authentication servers will keep the client logged in by cookies. You should therefore use 
-  // the logOut() function to properly log out the client. Or configure your server not to issue cookies.
+  // the logout() function to properly log out the client. Or configure your server not to issue cookies.
   storage?: 'local' | 'session'  // default: 'local'
   // Sets the prefix for keys used by this library in storage
   storageKeyPrefix?: string // default: 'ROCP_'

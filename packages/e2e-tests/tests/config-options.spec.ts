@@ -40,7 +40,7 @@ test("does not include scope in refresh request when refreshWithScope is false",
 	network,
 	oidc,
 }) => {
-	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds
+	oidc.accessTokenLifetimeSeconds = 20; // 20 seconds
 
 	await page.goto("/configurable?refreshWithScope=false");
 	await page.clock.install();
@@ -63,23 +63,23 @@ test("does not include scope in refresh request when refreshWithScope is false",
 	);
 
 	// Fast forward to trigger refresh
-	await page.clock.fastForward(6000);
+	await page.clock.fastForward(25_000);
 
 	await expect.poll(() => refreshRequestData).not.toBeNull();
 	expect(refreshRequestData).not.toContain("scope=");
 });
 
 test("uses manual expiry overrides", async ({ page, network, oidc }) => {
-  await page.goto("/configurable?tokenExpiresIn=100");
+	oidc.accessTokenLifetimeSeconds = 20;
+	await page.goto("/configurable?tokenExpiresIn=10");
 	await page.clock.install();
 	await login(page);
 	await expectAuthenticated(page);
 
 	const initialToken = await page.getByTestId("access-token").textContent();
 
-	// tokenExpiresIn: 100
-	// Buffer is 30s, so it should refresh after 70s.
-	await page.clock.fastForward(75000);
+	// Fast forward past the manual expiry (10s)
+	await page.clock.fastForward(11_000);
 
 	await expect(page.getByTestId("access-token")).not.toHaveText(initialToken!);
 });
@@ -92,7 +92,9 @@ test("respects absolute refreshTokenExpiryStrategy", async ({
 	oidc.refreshTokenLifetimeSeconds = 100;
 	oidc.accessTokenLifetimeSeconds = 40;
 
-	await page.goto("/configurable?strategy=absolute&onRefreshTokenExpire=called");
+	await page.goto(
+		"/configurable?strategy=absolute&onRefreshTokenExpire=called",
+	);
 	await page.clock.install();
 	await login(page);
 	await expectAuthenticated(page);

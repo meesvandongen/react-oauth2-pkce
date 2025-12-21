@@ -1,4 +1,4 @@
-import { createAuthCore, TAuthConfig } from "@mvd/auth-core";
+import { AuthConfig, createAuth } from "@mvd/auth-core";
 import { beforeEach, vi } from "vitest";
 import { useAuth } from "../src";
 
@@ -9,7 +9,7 @@ beforeEach(() => {
 	vi.spyOn(window, "open").mockImplementation(() => ({}) as Window);
 });
 
-export const authConfig: TAuthConfig = {
+export const authConfig: AuthConfig = {
 	autoLogin: true,
 	clientId: "myClientID",
 	authorizationEndpoint: "myAuthEndpoint",
@@ -29,22 +29,24 @@ export const authConfig: TAuthConfig = {
 	},
 };
 
-export function createAuthHarness(config: TAuthConfig = authConfig) {
-	const core = createAuthCore(config);
+export function createAuthHarness(config: AuthConfig = authConfig) {
+	const core = createAuth(config);
 
 	const AuthConsumer = () => {
-		const { tokenData, logOut, loginInProgress, logIn, token, error } =
-			useAuth(core);
+		const { tokenData, loginInProgress, token, error } = useAuth(core);
 		return (
 			<>
 				<div>{tokenData?.name}</div>
-				<button type="button" onClick={() => logOut({ state: "logoutState" })}>
+				<button
+					type="button"
+					onClick={() => core.logout({ state: "logoutState" })}
+				>
 					Log out
 				</button>
 				<button
 					type="button"
 					onClick={() =>
-						logIn({
+						core.login({
 							state: "loginState",
 						})
 					}

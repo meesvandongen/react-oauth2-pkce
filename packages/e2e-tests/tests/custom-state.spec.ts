@@ -11,7 +11,7 @@ test("logs in with default state from config", async ({ page }) => {
 	await expectAuthenticated(page);
 });
 
-test("logs in with custom state passed to logIn", async ({ page }) => {
+test("logs in with custom state passed to login", async ({ page }) => {
 	await page.getByTestId("login-custom-state-button").click();
 	await expectAuthenticated(page);
 	await expect(page.getByTestId("token-data")).toHaveText(

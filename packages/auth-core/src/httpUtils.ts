@@ -1,7 +1,7 @@
 import { FetchError } from "./errors";
-import type { TTokenRequest } from "./types";
+import type { TokenRequest } from "./types";
 
-function buildUrlEncodedRequest(request: TTokenRequest): string {
+function buildUrlEncodedRequest(request: TokenRequest): string {
 	let queryString = "";
 	for (const [key, value] of Object.entries(request)) {
 		queryString += `${queryString ? "&" : ""}${key}=${encodeURIComponent(value)}`;
@@ -11,7 +11,7 @@ function buildUrlEncodedRequest(request: TTokenRequest): string {
 
 interface PostWithXFormParams {
 	url: string;
-	request: TTokenRequest;
+	request: TokenRequest;
 	credentials: RequestCredentials;
 }
 

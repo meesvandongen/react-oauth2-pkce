@@ -1,9 +1,9 @@
-import { AuthCoreStore } from "@mvd/auth-core";
+import { Auth } from "@mvd/auth-core";
 import { useAuth } from "@mvd/auth-react";
-import {  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
-	store: AuthCoreStore;
+	store: Auth;
 	children?: React.ReactNode;
 }
 

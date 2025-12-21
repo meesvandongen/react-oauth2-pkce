@@ -24,6 +24,13 @@ test("can log in with replace navigation", async ({ page }) => {
 	await expectAuthenticated(page);
 });
 
+test("prelogin hook", async ({ page }) => {
+	await page.getByTestId("login-button").click();
+	await expect(page.getByTestId("pre-login-status")).toHaveText("called");
+
+	await expectAuthenticated(page);
+});
+
 test("has tokens after login", async ({ page }) => {
 	await login(page);
 	await expect(
