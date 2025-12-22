@@ -7,4 +7,7 @@ export default defineConfig({
 		port: 3010,
 		host: true,
 	},
+	resolve: {
+		tsconfigPaths: true,
+	},
 });
