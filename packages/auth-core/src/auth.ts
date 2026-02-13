@@ -35,6 +35,7 @@ import type {
 	TokenData,
 	TokenResponse,
 } from "./types";
+import { fetchUserInfo } from "./userInfo";
 
 interface EventMap {
 	"pre-login": undefined;
@@ -87,6 +88,7 @@ export class Auth extends TypedEventTarget<EventMap> {
 	#state: InternalState;
 	#snapshot: AuthSnapshot;
 	#didFetchTokens = false;
+	#userInfoForToken?: string;
 	readonly #config: InternalConfig;
 
 	constructor(authConfig: AuthConfig) {
@@ -178,6 +180,9 @@ export class Auth extends TypedEventTarget<EventMap> {
 				this.#storage.getItem(this.#key("idToken")),
 				undefined,
 			),
+			userInfo: undefined,
+			userInfoInProgress: false,
+			userInfoError: null,
 			loginInProgress: parseStoredValue<boolean>(
 				this.#storage.getItem(this.#key("loginInProgress")),
 				false,
@@ -233,9 +238,62 @@ export class Auth extends TypedEventTarget<EventMap> {
 			tokenData,
 			idToken: state.idToken,
 			idTokenData,
+			userInfo: state.userInfo,
+			userInfoInProgress: state.userInfoInProgress,
+			userInfoError: state.userInfoError,
 			error: state.error,
 			loginInProgress: state.loginInProgress,
 		};
+	}
+
+	public fetchUserInfo = async (): Promise<TokenData | undefined> => {
+		if (!this.#config.userInfoEndpoint) {
+			throw new Error("'userInfoEndpoint' must be set to fetch user info");
+		}
+		if (!this.#state.token) {
+			return undefined;
+		}
+		const token = this.#state.token;
+		this.#setState(
+			{ userInfoInProgress: true, userInfoError: null },
+			{ persist: false },
+		);
+		try {
+			const userInfo = await fetchUserInfo({
+				userInfoEndpoint: this.#config.userInfoEndpoint,
+				accessToken: token,
+				credentials: this.#config.userInfoRequestCredentials,
+			});
+			this.#userInfoForToken = token;
+			this.#setState(
+				{ userInfo, userInfoInProgress: false, userInfoError: null },
+				{ persist: false },
+			);
+			return userInfo;
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.#setState(
+				{ userInfoInProgress: false, userInfoError: message },
+				{ persist: false },
+			);
+			throw error;
+		}
+	};
+
+	#autoFetchUserInfoIfEnabled(): void {
+		if (!this.#config.autoFetchUserInfo) return;
+		if (!this.#config.userInfoEndpoint) return;
+		if (!this.#state.token) return;
+		if (this.#state.userInfoInProgress) return;
+		if (this.#userInfoForToken === this.#state.token && this.#state.userInfo) {
+			return;
+		}
+		this.fetchUserInfo().catch((error: unknown) => {
+			console.error(error);
+			if (error instanceof Error) {
+				this.dispatchTypedEvent("error", { detail: error });
+			}
+		});
 	}
 
 	#key(key: string): string {
@@ -250,6 +308,9 @@ export class Auth extends TypedEventTarget<EventMap> {
 				tokenExpire: undefined,
 				refreshTokenExpire: undefined,
 				idToken: undefined,
+				userInfo: undefined,
+				userInfoInProgress: false,
+				userInfoError: null,
 				loginInProgress: false,
 				refreshInProgress: false,
 			},
@@ -277,6 +338,9 @@ export class Auth extends TypedEventTarget<EventMap> {
 		const nextState: Partial<InternalState> = {
 			token: response.access_token,
 			tokenExpire: epochAtSecondsFromNow(tokenExpiresIn),
+			userInfo: undefined,
+			userInfoInProgress: false,
+			userInfoError: null,
 			error: null,
 		};
 		if (response.id_token) {
@@ -294,6 +358,7 @@ export class Auth extends TypedEventTarget<EventMap> {
 			}
 		}
 		this.#setState(nextState, { persist: true });
+		this.#autoFetchUserInfoIfEnabled();
 	}
 
 	#handleExpiredRefreshToken(initial = false): void {
@@ -491,6 +556,17 @@ export class Auth extends TypedEventTarget<EventMap> {
 	};
 
 	async #redirectToLogin(options?: LoginOptions): Promise<void> {
+		// PKCE requires WebCrypto and secure randomness.
+		// In some test environments (and in non-secure browser contexts), crypto may be missing or partial.
+		const cryptoObj = globalThis.crypto as Crypto | undefined;
+		const hasSubtleDigest = typeof cryptoObj?.subtle?.digest === "function";
+		const hasGetRandomValues = typeof cryptoObj?.getRandomValues === "function";
+		if (!hasSubtleDigest || !hasGetRandomValues) {
+			throw new Error(
+				"The context/environment is not secure, and does not support the 'crypto.subtle' module. See: https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle for details",
+			);
+		}
+
 		const navigationMethod =
 			options?.method === "replace" ? "replace" : "assign";
 

@@ -30,7 +30,15 @@ export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
 }
 
 export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
-	const { token, tokenData, idToken, idTokenData } = useAuth(store);
+	const {
+		token,
+		tokenData,
+		idToken,
+		idTokenData,
+		userInfo,
+		userInfoInProgress,
+		userInfoError,
+	} = useAuth(store);
 
 	return (
 		<div style={{ marginTop: "20px" }}>
@@ -47,6 +55,17 @@ export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
 			<pre data-testid="id-token-data">
 				{JSON.stringify(idTokenData, null, 2)}
 			</pre>
+
+			<h3>UserInfo</h3>
+			{userInfoInProgress && (
+				<div data-testid="user-info-in-progress">Loading userinfo...</div>
+			)}
+			{userInfoError && (
+				<div className="error" data-testid="user-info-error">
+					{userInfoError}
+				</div>
+			)}
+			<pre data-testid="user-info">{JSON.stringify(userInfo, null, 2)}</pre>
 		</div>
 	);
 }

@@ -27,6 +27,9 @@ export type TokenData = {
 	[x: string]: any;
 };
 
+// OpenID Connect UserInfo response is JSON (or occasionally JWT); we model it as a generic record.
+export type UserInfo = TokenData;
+
 export type TokenResponse = {
 	access_token: string;
 	scope: string;
@@ -61,6 +64,20 @@ export type AuthConfig = {
 	logoutRedirect?: string;
 	loginMethod?: LoginMethod;
 	decodeToken?: boolean;
+	/**
+	 * OpenID Connect UserInfo endpoint URL.
+	 * If set, you can call `auth.fetchUserInfo()` to load user claims even when access tokens are opaque.
+	 */
+	userInfoEndpoint?: string;
+	/**
+	 * If true, userinfo will automatically be fetched after login/refresh (requires `userInfoEndpoint`).
+	 */
+	autoFetchUserInfo?: boolean;
+	/**
+	 * Credentials policy for the UserInfo request.
+	 * Note: most providers only require the Authorization header; cookies are typically not needed.
+	 */
+	userInfoRequestCredentials?: RequestCredentials;
 	autoLogin?: boolean;
 	clearURL?: boolean;
 	extraAuthParameters?: PrimitiveRecord;
@@ -84,6 +101,8 @@ export type InternalConfig = WithRequired<
 	AuthConfig,
 	| "loginMethod"
 	| "decodeToken"
+	| "autoFetchUserInfo"
+	| "userInfoRequestCredentials"
 	| "autoLogin"
 	| "clearURL"
 	| "refreshTokenExpiryStrategy"
@@ -99,6 +118,9 @@ export type InternalState = {
 	refreshToken?: string;
 	refreshTokenExpire?: number;
 	idToken?: string;
+	userInfo?: UserInfo;
+	userInfoInProgress: boolean;
+	userInfoError: string | null;
 	loginInProgress: boolean;
 	refreshInProgress: boolean;
 	loginMethod: LoginMethod;
@@ -110,6 +132,9 @@ export type AuthSnapshot = {
 	tokenData?: TokenData;
 	idToken?: string;
 	idTokenData?: TokenData;
+	userInfo?: UserInfo;
+	userInfoInProgress: boolean;
+	userInfoError: string | null;
 	error: string | null;
 	loginInProgress: boolean;
 };

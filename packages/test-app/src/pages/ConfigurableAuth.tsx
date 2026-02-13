@@ -33,6 +33,11 @@ const store = createAuth({
 	clientId: "test-app",
 	authorizationEndpoint: "http://localhost:5556/idp/auth",
 	tokenEndpoint: "http://localhost:5556/idp/token",
+	userInfoEndpoint:
+		searchParams.get("userinfo") === "true"
+			? "http://localhost:5556/idp/userinfo"
+			: undefined,
+	autoFetchUserInfo: searchParams.get("autoFetchUserInfo") === "true",
 	logoutEndpoint:
 		searchParams.get("logout") === "true"
 			? "http://localhost:5556/idp/logout"

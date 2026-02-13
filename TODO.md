@@ -5,3 +5,7 @@
 5. plugin system for modifying requests, actions upon events, etc.
 6. handling of OIDC
 7. handling of opaque tokens
+8. Discovery endpoint caching
+9. If userinfo is enabled, we must be in loading state until userinfo is fetched.
+10. Create a list of guarantees provided by the library. e.g. you will always have a valid access token when isAuthenticated is true.
+

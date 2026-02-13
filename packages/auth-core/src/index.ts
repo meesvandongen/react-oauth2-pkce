@@ -7,4 +7,6 @@ export type {
 	RefreshTokenExpiredEvent,
 	TokenData,
 	TokenResponse,
+	UserInfo,
 } from "./types";
+export { fetchUserInfo } from "./userInfo";

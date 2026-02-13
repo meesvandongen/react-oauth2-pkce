@@ -1,8 +1,14 @@
+import { fetchWithRefreshToken } from "../src/authentication";
+import { decodeJWT } from "../src/decodeJWT";
+import { FetchError } from "../src/errors";
+import { epochAtSecondsFromNow, epochTimeIsPast } from "../src/timeUtils";
 import type { InternalConfig } from "../src/types";
 
 const authConfig: InternalConfig = {
 	autoLogin: false,
 	decodeToken: false,
+	autoFetchUserInfo: false,
+	userInfoRequestCredentials: "same-origin",
 	clientId: "myClientID",
 	authorizationEndpoint: "myAuthEndpoint",
 	tokenEndpoint: "myTokenEndpoint",
@@ -66,7 +72,7 @@ test("check if still valid token outside buffer has expired", () => {
 	expect(hasExpired).toBe(false);
 });
 
-test("failed refresh fetch raises FetchError", () => {
+test("failed refresh fetch raises FetchError", async () => {
 	// @ts-ignore
 	global.fetch = vi.fn(() =>
 		Promise.resolve({
@@ -76,14 +82,7 @@ test("failed refresh fetch raises FetchError", () => {
 			text: async () => "Failed to refresh token error body",
 		}),
 	);
-	fetchWithRefreshToken({ config: authConfig, refreshToken: "" }).catch(
-		(error: unknown) => {
-			if (error instanceof FetchError) {
-				expect(error.status).toBe(400);
-				expect(error.message).toBe("Bad request");
-			} else {
-				throw new Error("This is the wrong error type");
-			}
-		},
-	);
+	await expect(
+		fetchWithRefreshToken({ config: authConfig, refreshToken: "" }),
+	).rejects.toBeInstanceOf(FetchError);
 });

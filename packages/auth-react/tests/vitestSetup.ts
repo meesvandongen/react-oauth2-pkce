@@ -11,12 +11,16 @@ beforeEach(() => {
 	global.TextEncoder = TextEncoder;
 	global.TextDecoder = TextDecoder;
 
+	// oauth4webapi relies on WebCrypto + getRandomValues.
+	// happy-dom provides a partial crypto implementation; replace it with Node's WebCrypto.
 	// @ts-ignore
-	Object.defineProperty(global.crypto, "subtle", {
-		value: nodeCrypto.webcrypto.subtle,
+	Object.defineProperty(globalThis, "crypto", {
+		value: nodeCrypto.webcrypto,
 		writable: true,
 		configurable: true,
 	});
+	// @ts-ignore
+	window.crypto = nodeCrypto.webcrypto;
 
 	// @ts-ignore
 	delete window.location;

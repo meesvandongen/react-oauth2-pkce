@@ -1,4 +1,4 @@
-import { test } from "../playwright.setup";
+import { expect, test } from "../playwright.setup";
 import { expectAuthenticated, login } from "./helpers";
 
 test("handles response without refresh_token", async ({ page }) => {
@@ -114,4 +114,51 @@ test("handles invalid JWT gracefully", async ({ page }) => {
 	await page.goto("/configurable");
 	await login(page);
 	await expectAuthenticated(page);
+});
+
+test("supports opaque access_token + userinfo endpoint", async ({ page }) => {
+	await page.route("**/token", async (route, request) => {
+		if (request.postData()?.includes("authorization_code")) {
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({
+					access_token: "opaque_access_token_value",
+					token_type: "Bearer",
+					expires_in: 3600,
+					refresh_token: "refresh",
+				}),
+			});
+		} else {
+			await route.continue();
+		}
+	});
+
+	await page.route("**/userinfo", async (route, request) => {
+		const auth = request.headers()["authorization"];
+		if (auth !== "Bearer opaque_access_token_value") {
+			await route.fulfill({
+				status: 401,
+				body: "Missing/invalid Authorization",
+			});
+			return;
+		}
+
+		await route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({
+				sub: "test-user",
+				email: "test@example.com",
+				name: "Test User",
+			}),
+		});
+	});
+
+	await page.goto("/configurable?userinfo=true&autoFetchUserInfo=true");
+	await login(page);
+	await expectAuthenticated(page);
+
+	await expect(page.getByTestId("token-data")).toHaveText("");
+	await expect(page.getByTestId("user-info")).toContainText("test@example.com");
 });

@@ -25,6 +25,7 @@ export const authConfig: AuthConfig = {
 		testLogoutKey: "logoutValue",
 	},
 	extraTokenParameters: {
+		client_id: "anotherClientId",
 		testTokenKey: "tokenValue",
 	},
 };

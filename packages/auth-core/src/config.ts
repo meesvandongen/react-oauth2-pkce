@@ -10,6 +10,8 @@ export function createInternalConfig(passedConfig: AuthConfig): InternalConfig {
 		autoLogin: true,
 		clearURL: true,
 		decodeToken: true,
+		autoFetchUserInfo: false,
+		userInfoRequestCredentials: "same-origin",
 		scope: undefined,
 		loginMethod: "redirect",
 		storage: "local",
@@ -35,5 +37,10 @@ export function validateConfig(config: InternalConfig) {
 	}
 	if (stringIsUnset(config?.redirectUri)) {
 		throw Error("'redirectUri' must be set");
+	}
+	if (config.autoFetchUserInfo && stringIsUnset(config?.userInfoEndpoint)) {
+		throw Error(
+			"'userInfoEndpoint' must be set when 'autoFetchUserInfo' is true",
+		);
 	}
 }

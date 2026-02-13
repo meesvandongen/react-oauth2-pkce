@@ -1,5 +1,11 @@
 import type { TokenData } from "./types";
 
+function looksLikeJwt(token: string): boolean {
+	// JWTs are three base64url encoded segments separated by '.'
+	// If it's not shaped like a JWT, treat it as an opaque token and skip decoding.
+	return token.split(".").length === 3;
+}
+
 /**
  * Decodes the base64 encoded JWT. Returns a TToken.
  */
@@ -27,6 +33,7 @@ export const decodeAccessToken = (
 	token: string | null | undefined,
 ): TokenData | undefined => {
 	if (!token || !token.length) return undefined;
+	if (!looksLikeJwt(token)) return undefined;
 	try {
 		return decodeJWT(token);
 	} catch (e) {
@@ -38,6 +45,7 @@ export const decodeIdToken = (
 	idToken: string | null | undefined,
 ): TokenData | undefined => {
 	if (!idToken || !idToken.length) return undefined;
+	if (!looksLikeJwt(idToken)) return undefined;
 	try {
 		return decodeJWT(idToken);
 	} catch (e) {
