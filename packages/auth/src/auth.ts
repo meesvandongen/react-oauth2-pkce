@@ -23,6 +23,7 @@ import {
 	getRefreshExpiresIn,
 } from "./timeUtils";
 import type {
+	AuthAuthenticatedSnapshotTyped,
 	AuthConfig,
 	AuthSnapshot,
 	InternalConfig,
@@ -34,16 +35,29 @@ import type {
 	RefreshTokenExpiredEvent,
 	TokenData,
 	TokenResponse,
+	UserInfo,
 } from "./types";
 import { fetchUserInfo } from "./userInfo";
 
-interface EventMap {
+type AuthEventMap<
+	HasUserInfo extends boolean,
+	AccessTokenData extends TokenData,
+	IdTokenData extends TokenData,
+	UserInfoData extends UserInfo,
+	RequireData extends boolean,
+> = {
 	"pre-login": undefined;
 	"post-login": TokenResponse;
 	"refresh-token-expired": RefreshTokenExpiredEvent;
 	error: Error;
-	"state-change": AuthSnapshot;
-}
+	"state-change": AuthSnapshot<
+		HasUserInfo,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData,
+		RequireData
+	>;
+};
 
 const PERSISTED_KEYS = [
 	"token",
@@ -79,19 +93,94 @@ function parseStoredValue<T>(value: string | null, fallback: T): T {
 	}
 }
 
-export function createAuth(authConfig: AuthConfig): Auth {
+export function createAuth<
+	const HasUserInfo extends boolean,
+	AccessTokenData extends TokenData = TokenData,
+	IdTokenData extends TokenData = TokenData,
+	UserInfoData extends UserInfo = UserInfo,
+>(
+	authConfig: AuthConfig<
+		HasUserInfo,
+		true,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData
+	>,
+): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, true>;
+export function createAuth<
+	const HasUserInfo extends boolean,
+	AccessTokenData extends TokenData = TokenData,
+	IdTokenData extends TokenData = TokenData,
+	UserInfoData extends UserInfo = UserInfo,
+>(
+	authConfig: AuthConfig<
+		HasUserInfo,
+		boolean,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData
+	>,
+): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, boolean>;
+export function createAuth<
+	const HasUserInfo extends boolean,
+	AccessTokenData extends TokenData = TokenData,
+	IdTokenData extends TokenData = TokenData,
+	UserInfoData extends UserInfo = UserInfo,
+>(
+	authConfig: AuthConfig<
+		HasUserInfo,
+		boolean,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData
+	>,
+): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, boolean> {
 	return new Auth(authConfig);
 }
 
-export class Auth extends TypedEventTarget<EventMap> {
+export class Auth<
+	HasUserInfo extends boolean = boolean,
+	AccessTokenData extends TokenData = TokenData,
+	IdTokenData extends TokenData = TokenData,
+	UserInfoData extends UserInfo = UserInfo,
+	RequireData extends boolean = boolean,
+> extends TypedEventTarget<
+	AuthEventMap<
+		HasUserInfo,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData,
+		RequireData
+	>
+> {
 	#storage: Storage;
 	#state: InternalState;
-	#snapshot: AuthSnapshot;
+	#snapshot: AuthSnapshot<
+		HasUserInfo,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData,
+		RequireData
+	>;
 	#didFetchTokens = false;
 	#userInfoForToken?: string;
-	readonly #config: InternalConfig;
+	readonly #config: InternalConfig<
+		HasUserInfo,
+		RequireData,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData
+	>;
 
-	constructor(authConfig: AuthConfig) {
+	constructor(
+		authConfig: AuthConfig<
+			HasUserInfo,
+			RequireData,
+			AccessTokenData,
+			IdTokenData,
+			UserInfoData
+		>,
+	) {
 		super();
 		this.#config = createInternalConfig(authConfig);
 		this.#storage =
@@ -117,6 +206,10 @@ export class Auth extends TypedEventTarget<EventMap> {
 	public getSnapshot = () => {
 		return this.#snapshot;
 	};
+
+	public get requiresData(): RequireData {
+		return this.#config.requireData as RequireData;
+	}
 
 	public login = (options?: LoginOptions): void => {
 		this.#clearSession();
@@ -225,28 +318,96 @@ export class Auth extends TypedEventTarget<EventMap> {
 				}
 			}
 		}
-		this.dispatchTypedEvent("state-change", { detail: this.#snapshot });
+		(this.dispatchTypedEvent as unknown as (...args: unknown[]) => void)(
+			"state-change",
+			{
+				detail: this.#snapshot,
+			},
+		);
 	}
 
-	#computeSnapshot(state: InternalState): AuthSnapshot {
+	#computeSnapshot(
+		state: InternalState,
+	): AuthSnapshot<
+		HasUserInfo,
+		AccessTokenData,
+		IdTokenData,
+		UserInfoData,
+		RequireData
+	> {
+		if (state.loginInProgress) {
+			return {
+				status: "loading",
+				error: state.error,
+			};
+		}
+
+		if (!state.token) {
+			return {
+				status: "unauthenticated",
+				error: state.error,
+			};
+		}
+
 		const tokenData = this.#config.decodeToken
-			? decodeAccessToken(state.token)
-			: undefined;
-		const idTokenData = decodeIdToken(state.idToken);
+			? (decodeAccessToken(state.token) as AccessTokenData | undefined)
+			: null;
+		const idTokenData = decodeIdToken(state.idToken) as IdTokenData | undefined;
+		const mappedTokenData =
+			tokenData === null || tokenData === undefined
+				? null
+				: this.#config.mapTokenData
+					? this.#config.mapTokenData(tokenData as TokenData)
+					: tokenData;
+		const mappedIdTokenData =
+			idTokenData === undefined
+				? null
+				: this.#config.mapIdTokenData
+					? this.#config.mapIdTokenData(idTokenData as TokenData)
+					: idTokenData;
+		const mappedUserInfo =
+			state.userInfo === undefined
+				? null
+				: this.#config.mapUserInfo
+					? this.#config.mapUserInfo(state.userInfo)
+					: (state.userInfo as UserInfoData);
+		if (this.#config.autoFetchUserInfo) {
+			return {
+				status: "authenticated",
+				error: state.error,
+				token: state.token,
+				tokenData: mappedTokenData,
+				idToken: state.idToken ?? null,
+				idTokenData: mappedIdTokenData,
+				userInfo: mappedUserInfo,
+				userInfoInProgress: state.userInfoInProgress,
+				userInfoError: state.userInfoError,
+			} as unknown as AuthAuthenticatedSnapshotTyped<
+				HasUserInfo,
+				AccessTokenData,
+				IdTokenData,
+				UserInfoData,
+				RequireData
+			>;
+		}
+
 		return {
-			token: state.token,
-			tokenData,
-			idToken: state.idToken,
-			idTokenData,
-			userInfo: state.userInfo,
-			userInfoInProgress: state.userInfoInProgress,
-			userInfoError: state.userInfoError,
+			status: "authenticated",
 			error: state.error,
-			loginInProgress: state.loginInProgress,
-		};
+			token: state.token,
+			tokenData: mappedTokenData,
+			idToken: state.idToken ?? null,
+			idTokenData: mappedIdTokenData,
+		} as unknown as AuthAuthenticatedSnapshotTyped<
+			HasUserInfo,
+			AccessTokenData,
+			IdTokenData,
+			UserInfoData,
+			RequireData
+		>;
 	}
 
-	public fetchUserInfo = async (): Promise<TokenData | undefined> => {
+	public fetchUserInfo = async (): Promise<UserInfoData | undefined> => {
 		if (!this.#config.userInfoEndpoint) {
 			throw new Error("'userInfoEndpoint' must be set to fetch user info");
 		}
@@ -259,14 +420,21 @@ export class Auth extends TypedEventTarget<EventMap> {
 			{ persist: false },
 		);
 		try {
-			const userInfo = await fetchUserInfo({
+			const fetchedUserInfo = await fetchUserInfo({
 				userInfoEndpoint: this.#config.userInfoEndpoint,
 				accessToken: token,
 				credentials: this.#config.userInfoRequestCredentials,
 			});
+			const userInfo = this.#config.mapUserInfo
+				? this.#config.mapUserInfo(fetchedUserInfo)
+				: (fetchedUserInfo as UserInfoData);
 			this.#userInfoForToken = token;
 			this.#setState(
-				{ userInfo, userInfoInProgress: false, userInfoError: null },
+				{
+					userInfo: userInfo as UserInfo,
+					userInfoInProgress: false,
+					userInfoError: null,
+				},
 				{ persist: false },
 			);
 			return userInfo;

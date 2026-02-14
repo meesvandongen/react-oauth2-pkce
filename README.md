@@ -1,7 +1,7 @@
-# @mvd/auth-react
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/soofstad/react-oauth2-pkce/blob/main/LICENSE) ![NPM Version](https://img.shields.io/npm/v/@mvd/auth-react?logo=npm&label=version) ![NPM Downloads](https://img.shields.io/npm/d18m/@mvd/auth-react?logo=npm) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@mvd/auth-react?label=size) ![CI](https://github.com/soofstad/react-oauth2-pkce/actions/workflows/tests.yaml/badge.svg)
+# @mvd/auth
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/soofstad/react-oauth2-pkce/blob/main/LICENSE) ![NPM Version](https://img.shields.io/npm/v/@mvd/auth?logo=npm&label=version) ![NPM Downloads](https://img.shields.io/npm/d18m/@mvd/auth?logo=npm) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@mvd/auth?label=size) ![CI](https://github.com/soofstad/react-oauth2-pkce/actions/workflows/tests.yaml/badge.svg)
 
-React package for OAuth2 Authorization Code flow with PKCE
+Provider-agnostic OAuth2 Authorization Code Flow with PKCE for browser apps, with React hooks available from `@mvd/auth/react`.
 
 Adhering to the RFCs recommendations, cryptographically sound, and with __zero__ dependencies!  
 
@@ -28,78 +28,187 @@ Long version;
 ## Example
 
 ```tsx
-import { useAuthContext, AuthProvider, TAuthConfig, TRefreshTokenExpiredEvent } from "@mvd/auth-react"
+import { createAuth } from "@mvd/auth";
+import { useAuth, useAuthenticatedAuth } from "@mvd/auth/react";
 
-const authConfig: TAuthConfig = {
-  clientId: 'myClientID',
-  authorizationEndpoint: 'https://myAuthProvider.com/auth',
-  tokenEndpoint: 'https://myAuthProvider.com/token',
-  redirectUri: 'http://localhost:3000/',
-  scope: 'someScope openid',
-  onRefreshTokenExpire: (event: TRefreshTokenExpiredEvent) => event.login(undefined, undefined, "popup"),
+const auth = createAuth({
+    clientId: "myClientID",
+    authorizationEndpoint: "https://myAuthProvider.com/auth",
+    tokenEndpoint: "https://myAuthProvider.com/token",
+    redirectUri: "http://localhost:3000/",
+    scope: "openid profile email",
+    autoLogin: false,
+});
+
+function LoginGate() {
+    const snapshot = useAuth(auth);
+
+    if (snapshot.status === "loading") return <p>Logging in...</p>;
+    if (snapshot.status === "unauthenticated") {
+        return <button onClick={() => auth.login()}>Log in</button>;
+    }
+
+    return <AuthenticatedProfile />;
 }
 
-const UserInfo = (): JSX.Element => {
-    const {token, tokenData} = useAuthContext()
-
-    return <>
-        <h4>Access Token</h4>
-        <pre>{token}</pre>
-        <h4>User Information from JWT</h4>
-        <pre>{JSON.stringify(tokenData, null, 2)}</pre>
-    </>
+function AuthenticatedProfile() {
+    const authenticated = useAuthenticatedAuth(auth);
+    return (
+        <>
+            <h4>Access Token</h4>
+            <pre>{authenticated.token}</pre>
+            <h4>User Information from JWT</h4>
+            <pre>{JSON.stringify(authenticated.tokenData, null, 2)}</pre>
+        </>
+    );
 }
-
-ReactDOM.render(<AuthProvider authConfig={authConfig}>
-        <UserInfo/>
-    </AuthProvider>
-    , document.getElementById('root'),
-)
 ```
 
 For more advanced examples, see `./examples/`.  
 
 ## Install
 
-The package is available on npmjs.com here; https://www.npmjs.com/package/@mvd/auth-react
+The package is available on npmjs.com here: https://www.npmjs.com/package/@mvd/auth
 
 ```bash
-npm install @mvd/auth-react
+npm install @mvd/auth
 ```
 
 ## API
 
-### IAuthContext values
+### AuthSnapshot values (from `useAuth()`)
 
-The object that's returned by `useAuthContext()` provides these values;
+`useAuth(auth)` now returns a discriminated union. Guard once on `status`, then access strongly typed authenticated values without optional chaining.
 
 ```typescript
-interface IAuthContext {
-  // The access token. This is what you will use for authentication against protected Web API's
-  token: string
-  // An object with all the properties encoded in the token (username, email, etc.), if the token is a JWT 
-  tokenData?: TTokenData
-  // Function to trigger login. 
-  // If you want to use 'state', you might want to set 'clearURL' configuration parameter to 'false'.
-  // Note that most browsers block popups by default. The library will print a warning and fallback to redirect if the popup is blocked
-  login: (state?: string, additionalParameters?: { [key: string]: string | boolean | number }, method: TLoginMethod = 'redirect') => void
-  // Function to trigger logout from authentication provider. You may provide optional 'state', and 'logout_hint' values.
-  // See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout for details.
-  logout: (state?: string, logoutHint?: string, additionalParameters?: { [key: string]: string | boolean | number }) => void
-  // Keeps any errors that occured during login, token fetching/refreshing, decoding, etc.. 
-  error: string | null
-  // The idToken, if it was returned along with the access token
-  idToken?: string
-  // An object with all the properties encoded in the ID-token (username, groups, etc.)
-  idTokenData?: TTokenData
-  // If the <AuthProvider> is done fetching tokens or not. Usefull for controlling page rendering
-  loginInProgress: boolean
+type AuthSnapshot =
+	| {
+			status: "loading";
+			error: string | null;
+	  }
+	| {
+			status: "unauthenticated";
+			error: string | null;
+	  }
+	| {
+			status: "authenticated";
+			error: string | null;
+			token: string;
+			tokenData: TokenData | null;
+			idToken: string | null;
+			idTokenData: TokenData | null;
+	  };
+```
+
+### `useAuthenticatedAuth()`
+
+Use `useAuthenticatedAuth(auth)` when the component requires an authenticated user. It returns only the authenticated branch and throws if auth is currently `loading` or `unauthenticated`.
+
+This pattern gives better DX in protected routes/components because token fields are guaranteed.
+
+You can also enforce non-null decoded/userinfo payloads:
+
+```tsx
+type AccessClaims = { sub: string; name: string };
+type IdClaims = { sub: string; email: string };
+type Profile = { sub: string; preferred_username: string };
+
+const auth = createAuth({
+  clientId: "myClientID",
+  authorizationEndpoint: "https://myAuthProvider.com/auth",
+  tokenEndpoint: "https://myAuthProvider.com/token",
+  redirectUri: "http://localhost:3000/",
+  requireData: true,
+  autoFetchUserInfo: true,
+  userInfoEndpoint: "https://myAuthProvider.com/userinfo",
+  mapTokenData: (data): AccessClaims => data as AccessClaims,
+  mapIdTokenData: (data): IdClaims => data as IdClaims,
+  mapUserInfo: (info): Profile => info as Profile,
+});
+
+function StrictProfile() {
+  const authenticated = useAuthenticatedAuth(auth);
+  // tokenData, idTokenData and userInfo are non-null and strongly typed here
+  return <pre>{authenticated.userInfo.preferred_username}</pre>;
 }
 ```
 
+### Type inference cookbook
+
+These patterns require **no explicit TypeScript generic parameters**. The `auth` instance type is inferred from `createAuth(...)` config.
+
+#### 1) Basic auth (nullable decoded payloads)
+
+```tsx
+const auth = createAuth({
+  clientId: "myClientID",
+  authorizationEndpoint: "https://myAuthProvider.com/auth",
+  tokenEndpoint: "https://myAuthProvider.com/token",
+  redirectUri: "http://localhost:3000/",
+});
+
+const snapshot = useAuth(auth);
+if (snapshot.status === "authenticated") {
+  // tokenData: TokenData | null
+  console.log(snapshot.tokenData);
+}
+```
+
+#### 2) Strict decoded payloads (non-null tokenData / idTokenData)
+
+```tsx
+type AccessClaims = { sub: string; name: string };
+type IdClaims = { sub: string; email: string };
+
+const auth = createAuth({
+  clientId: "myClientID",
+  authorizationEndpoint: "https://myAuthProvider.com/auth",
+  tokenEndpoint: "https://myAuthProvider.com/token",
+  redirectUri: "http://localhost:3000/",
+  requireData: true,
+  mapTokenData: (data): AccessClaims => data as AccessClaims,
+  mapIdTokenData: (data): IdClaims => data as IdClaims,
+});
+
+const authenticated = useAuthenticatedAuth(auth);
+// tokenData/idTokenData are non-null + strongly typed
+authenticated.tokenData.name;
+authenticated.idTokenData.email;
+```
+
+#### 3) Strict + UserInfo (non-null userInfo)
+
+```tsx
+type Profile = { sub: string; preferred_username: string };
+
+const auth = createAuth({
+  clientId: "myClientID",
+  authorizationEndpoint: "https://myAuthProvider.com/auth",
+  tokenEndpoint: "https://myAuthProvider.com/token",
+  redirectUri: "http://localhost:3000/",
+  requireData: true,
+  autoFetchUserInfo: true,
+  userInfoEndpoint: "https://myAuthProvider.com/userinfo",
+  mapUserInfo: (info): Profile => info as Profile,
+});
+
+const authenticated = useAuthenticatedAuth(auth);
+authenticated.userInfo.preferred_username;
+```
+
+### UserInfo typing based on config
+
+When `autoFetchUserInfo: true` is provided in config (and `userInfoEndpoint` is set), authenticated snapshots include:
+
+- `userInfo`
+- `userInfoInProgress`
+- `userInfoError`
+
+When userinfo fetching is not enabled, those fields are not exposed in authenticated snapshot types.
+
 ### Configuration parameters
 
-__@mvd/auth-react__'s goal is to "just work" with any authentication provider that either
+`@mvd/auth` aims to "just work" with any authentication provider that either
 supports the [OAuth2](https://datatracker.ietf.org/doc/html/rfc7636) or [OpenID Connect](https://openid.net/developers/specs/) (OIDC) standards.  
 However, many authentication providers are not following these standards, or have extended them. 
 With this in mind, if you are experiencing any problems, a good place to start is to see if the provider expects some custom parameters.
@@ -109,10 +218,10 @@ If they do, these can be injected into the different calls with these configurat
 - `extraTokenParameters`
 - `extraLogoutParameters`
 
-The `<AuthProvider>` takes a `config` object that supports these parameters;
+`createAuth(config)` accepts this configuration type:
 
 ```typescript
-type TAuthConfig = {
+type AuthConfig = {
   // ID of your app at the authentication provider
   clientId: string  // Required
   // URL for the authentication endpoint at the authentication provider
@@ -129,26 +238,23 @@ type TAuthConfig = {
   logoutEndpoint?: string  // default: null
   // Which URL the auth provider should redirect the user to after logout
   logoutRedirect?: string  // default: null
-  // Optionally provide a callback function to run _before_ the
-  // user is redirected to the auth server for login
-  preLogin?: () => void  // default: () => null
-  // Optionally provide a callback function to run _after_ the
-  // user has been redirected back from the auth server
-  postLogin?: () => void  // default: () => null
   // Which method to use for login. Can be 'redirect', 'replace', or 'popup'
   // Note that most browsers block popups by default. The library will print a warning and fallback to redirect if the popup is blocked
-  loginMethod: 'redirect' | 'replace' | 'popup'  // default: 'redirect'
-  // Optional callback function for the 'refreshTokenExpired' event.
-  // You likely want to display a message saying the user need to log in again. A page refresh is enough.
-  onRefreshTokenExpire?: (event: TRefreshTokenExpiredEvent) => void  // default: undefined
+    loginMethod?: 'redirect' | 'replace' | 'popup'  // default: 'redirect'
   // Whether or not to decode the access token (should be set to 'false' if the access token is not a JWT (e.g. from Github))
-  // If `false`, 'tokenData' will be 'undefined' from the <AuthContext>
+    // If `false`, authenticated snapshot `tokenData` will be null
   decodeToken?: boolean  // default: true
+    // Optional OpenID Connect userinfo endpoint
+    userInfoEndpoint?: string // default: undefined
+    // Automatically fetch userinfo after login/refresh (requires userInfoEndpoint)
+    autoFetchUserInfo?: boolean // default: false
+    // Credentials policy used when fetching userinfo
+    userInfoRequestCredentials?: 'same-origin' | 'include' | 'omit' // default: 'same-origin'
   // By default, the package will automatically redirect the user to the login server if not already logged in.
   // If set to false, you need to call the "login()" function to log in (e.g. with a "Log in" button)
   autoLogin?: boolean  // default: true
   // Store login state in 'localStorage' or 'sessionStorage'
-  // If set to 'session', no login state is persisted by '@mvd/auth-react` when the browser closes.
+    // If set to 'session', no login state is persisted by '@mvd/auth' when the browser closes.
   // NOTE: Many authentication servers will keep the client logged in by cookies. You should therefore use 
   // the logout() function to properly log out the client. Or configure your server not to issue cookies.
   storage?: 'local' | 'session'  // default: 'local'
@@ -192,27 +298,31 @@ You should configure your IDP (Identity Provider) to send these, but if that is 
 with the config parameters `tokenExpiresIn` and `refreshTokenExpiresIn`.
 
 ### Fails to compile with Next.js
-The library's main componet `AuthProvider` is _client side only_. Meaning it must be rendered in a web browser, and can not be pre-rendered server-side (which is default in newer versions of NextJS and similar frameworks). 
+`createAuth()` and hooks from `@mvd/auth/react` are _client-side only_ (they rely on browser APIs like `window`, `crypto`, and storage). They cannot run during server rendering.
 
-This can be solved by marking the module with `use client` and importing the component in the client only (`"ssr": false`).
+This can be solved by marking your auth-using module with `use client` and (optionally) loading it client-only (`"ssr": false`).
 
 ```tsx
 'use client'
 import dynamic from 'next/dynamic'
-import {TAuthConfig, TRefreshTokenExpiredEvent, useAuthContext} from '@mvd/auth-react'
+import { createAuth } from '@mvd/auth'
+import { useAuth } from '@mvd/auth/react'
 
-const AuthProvider = dynamic(
-    ()=> import("@mvd/auth-react")
-        .then((mod) => mod.AuthProvider),
+const AuthPage = dynamic(
+    () => import('./AuthPage'),
     {ssr: false}
 )
 
-const authConfig: TAuthConfig = {...for you to fill inn}
+const auth = createAuth({
+    clientId: 'my-client-id',
+    authorizationEndpoint: 'https://idp.example.com/auth',
+    tokenEndpoint: 'https://idp.example.com/token',
+    redirectUri: 'http://localhost:3000/',
+})
 
 export default function Authenticated() {
-    (<AuthProvider authConfig={authConfig}>
-        <LoginInfo/>
-    </AuthProvider>)
+    const snapshot = useAuth(auth)
+    return <AuthPage status={snapshot.status} />
 }
 ```
 
@@ -229,21 +339,22 @@ something similar instead. Any such functions should be handled outside of this 
 ### After redirect back from auth provider with `?code`, no token request is made
 
 If you are using libraries that intercept any `fetch()`-requests made. For example `@tanstack/react-query`. That can cause
-issues for the _AuthProviders_ token fetching. This can be solved by _not_ wrapping the `<AuthProvider>` in any such library.
+issues for auth token fetching. This can be solved by avoiding wrappers that override or block fetch behavior around your auth bootstrap path.
 
-This could also happen if some routes in your app are not wrapped by the `<AuthProvider>`.
+This could also happen if auth initialization (`createAuth(...)`) is not executed on routes that should process the redirect callback.
 
 ### The page randomly refreshes in the middle of a session
 
-This will happen if you haven't provided a callback-function for the `onRefreshTokenExpire` config parameter, and the refresh token expires.
+This will happen when refresh token rotation/expiry reaches a point where silent refresh can no longer continue.
+Subscribe to the `refresh-token-expired` event and prompt users to log in again.
 You probably want to implement some kind of "alert/message/banner", saying that the session has expired and that the user needs to log in again.
 Either by refreshing the page, or clicking a "Log in" button.
 
 ## Develop
 
-1. Update the 'authConfig' object in `src/index.js` with config from your authorization server and application
-2. Install node_modules -> `$ yarn install`
-3. Run -> `$ yarn start`
+1. Update auth config in the test app (`packages/test-app/src/pages/ConfigurableAuth.tsx`) to match your provider.
+2. Install dependencies -> `$ pnpm install`
+3. Run the test app -> `$ pnpm --filter e2e-test-app start`
 
 ## Contribute
 

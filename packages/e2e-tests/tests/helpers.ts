@@ -2,9 +2,20 @@ import type { Locator, Page } from "@playwright/test";
 import { expect } from "../playwright.setup";
 
 /**
+ * Assert the auth snapshot status rendered by the UI.
+ */
+export async function expectAuthState(
+	page: Page | Locator,
+	state: "loading" | "unauthenticated" | "authenticated",
+) {
+	await expect(page.getByTestId("auth-state")).toHaveText(state);
+}
+
+/**
  * Assert the user is authenticated.
  */
 export async function expectAuthenticated(page: Page | Locator) {
+	await expectAuthState(page, "authenticated");
 	await expect(page.getByTestId("authenticated")).toBeVisible();
 }
 
@@ -12,6 +23,7 @@ export async function expectAuthenticated(page: Page | Locator) {
  * Assert the user is not authenticated.
  */
 export async function expectNotAuthenticated(page: Page | Locator) {
+	await expectAuthState(page, "unauthenticated");
 	await expect(page.getByTestId("not-authenticated")).toBeVisible();
 }
 
@@ -19,6 +31,7 @@ export async function expectNotAuthenticated(page: Page | Locator) {
  * Assert the authentication process is in progress.
  */
 export async function expectLoginInProgress(page: Page | Locator) {
+	await expectAuthState(page, "loading");
 	await expect(page.getByTestId("login-in-progress")).toBeVisible();
 }
 

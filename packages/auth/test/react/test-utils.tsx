@@ -34,7 +34,13 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 	const core = createAuth(config);
 
 	const AuthConsumer = () => {
-		const { tokenData, loginInProgress, token, error } = useAuth(core);
+		const snapshot = useAuth(core);
+		const loginInProgress = snapshot.status === "loading";
+		const token =
+			snapshot.status === "authenticated" ? snapshot.token : undefined;
+		const tokenData =
+			snapshot.status === "authenticated" ? snapshot.tokenData : null;
+		const error = snapshot.error;
 		return (
 			<>
 				<div>{tokenData?.name}</div>

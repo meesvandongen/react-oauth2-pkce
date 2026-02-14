@@ -1,5 +1,5 @@
 import { Auth } from "@mvd/auth";
-import { useAuth } from "@mvd/auth/react";
+import { useAuth, useAuthenticatedAuth } from "@mvd/auth/react";
 import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
@@ -8,10 +8,14 @@ interface AuthStatusPanelProps {
 }
 
 export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
-	const { token, error, loginInProgress } = useAuth(store);
+	const snapshot = useAuth(store);
+	const loginInProgress = snapshot.status === "loading";
+	const token = snapshot.status === "authenticated" ? snapshot.token : null;
+	const error = snapshot.error;
 
 	return (
 		<div data-testid="auth-status">
+			<div data-testid="auth-state">{snapshot.status}</div>
 			{loginInProgress && (
 				<span data-testid="login-in-progress">Login in progress...</span>
 			)}
@@ -29,45 +33,53 @@ export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
 	);
 }
 
-export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
-	const {
-		token,
-		tokenData,
-		idToken,
-		idTokenData,
-		userInfo,
-		userInfoInProgress,
-		userInfoError,
-	} = useAuth(store);
+function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
+	const auth = useAuthenticatedAuth(store);
 
 	return (
 		<div style={{ marginTop: "20px" }}>
 			<h3>Access Token</h3>
-			<pre data-testid="access-token">{token}</pre>
+			<pre data-testid="access-token">{auth.token}</pre>
 
 			<h3>Decoded Token Data</h3>
-			<pre data-testid="token-data">{JSON.stringify(tokenData, null, 2)}</pre>
+			<pre data-testid="token-data">
+				{JSON.stringify(auth.tokenData, null, 2)}
+			</pre>
 
 			<h3>ID Token</h3>
-			<pre data-testid="id-token">{idToken}</pre>
+			<pre data-testid="id-token">{auth.idToken}</pre>
 
 			<h3>Decoded ID Token Data</h3>
 			<pre data-testid="id-token-data">
-				{JSON.stringify(idTokenData, null, 2)}
+				{JSON.stringify(auth.idTokenData, null, 2)}
 			</pre>
 
-			<h3>UserInfo</h3>
-			{userInfoInProgress && (
-				<div data-testid="user-info-in-progress">Loading userinfo...</div>
+			{"userInfo" in auth && (
+				<>
+					<h3>UserInfo</h3>
+					{auth.userInfoInProgress && (
+						<div data-testid="user-info-in-progress">Loading userinfo...</div>
+					)}
+					{auth.userInfoError && (
+						<div className="error" data-testid="user-info-error">
+							{auth.userInfoError}
+						</div>
+					)}
+					<pre data-testid="user-info">
+						{JSON.stringify(auth.userInfo, null, 2)}
+					</pre>
+				</>
 			)}
-			{userInfoError && (
-				<div className="error" data-testid="user-info-error">
-					{userInfoError}
-				</div>
-			)}
-			<pre data-testid="user-info">{JSON.stringify(userInfo, null, 2)}</pre>
 		</div>
 	);
+}
+
+export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
+	const snapshot = useAuth(store);
+	if (snapshot.status !== "authenticated") {
+		return null;
+	}
+	return <AuthTokenDetailsAuthenticated store={store} />;
 }
 
 type StorageSnapshot = Record<string, string | null>;

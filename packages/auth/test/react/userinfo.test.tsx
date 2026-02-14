@@ -22,6 +22,7 @@ describe("userinfo", () => {
 
 		const core = createAuth({
 			autoLogin: false,
+			autoFetchUserInfo: true,
 			clientId: "myClientID",
 			authorizationEndpoint: "myAuthEndpoint",
 			tokenEndpoint: "myTokenEndpoint",
@@ -44,10 +45,14 @@ describe("userinfo", () => {
 		});
 
 		const snapshot = core.getSnapshot();
+		expect(snapshot.status).toBe("authenticated");
+		if (snapshot.status !== "authenticated") {
+			throw new Error("Expected authenticated snapshot in userinfo test");
+		}
 		expect(snapshot.userInfo?.sub).toBe("123");
 		expect(snapshot.userInfo?.email).toBe("a@b.c");
 		// access token is opaque -> no decoded JWT data
-		expect(snapshot.tokenData).toBeUndefined();
+		expect(snapshot.tokenData).toBeNull();
 	});
 
 	test("does not warn when decodeToken=true and access token is opaque", async () => {

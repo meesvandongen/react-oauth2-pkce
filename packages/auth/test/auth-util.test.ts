@@ -19,6 +19,7 @@ const authConfig: InternalConfig = {
 	refreshTokenExpiryStrategy: "renewable",
 	storageKeyPrefix: "ROCP_",
 	refreshWithScope: true,
+	requireData: false,
 	loginMethod: "redirect",
 	extraTokenParameters: {
 		prompt: true,
