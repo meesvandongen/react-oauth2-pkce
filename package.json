@@ -12,6 +12,7 @@
 		"fix": "biome check --write ."
 	},
 	"devDependencies": {
+		"@typescript/native-preview": "7.0.0-dev.20260214.1",
 		"@biomejs/biome": "^2.3.8",
 		"turbo": "^2.7.0",
 		"typescript": "5.9.3"

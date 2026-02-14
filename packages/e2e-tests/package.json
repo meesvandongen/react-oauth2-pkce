@@ -9,10 +9,11 @@
 		"test:debug": "playwright test --debug",
 		"standalone-idp": "bun run ./msw/standalone.ts",
 		"playwright:install": "playwright install chromium",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsgo --noEmit",
 		"lint": "biome check ."
 	},
 	"devDependencies": {
+		"@typescript/native-preview": "7.0.0-dev.20260214.1",
 		"@mswjs/http-middleware": "^0.10.3",
 		"@mvd/playwright-msw": "^0.4.4",
 		"@playwright/test": "^1.49.0",
