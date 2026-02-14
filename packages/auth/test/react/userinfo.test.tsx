@@ -70,7 +70,7 @@ describe("userinfo", () => {
 				authorizationEndpoint: "myAuthEndpoint",
 				tokenEndpoint: "myTokenEndpoint",
 				redirectUri: "http://localhost/",
-			})
+			}),
 		).toThrow();
 	});
 });

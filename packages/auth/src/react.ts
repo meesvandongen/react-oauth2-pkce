@@ -18,13 +18,7 @@ export function useAuthState<
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
+	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthSnapshot<
 	HasUserInfo,
 	HasOidc,
@@ -46,13 +40,7 @@ export function useAuth<
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
+	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthAuthenticatedSnapshotTyped<
 	HasUserInfo,
 	HasOidc,
@@ -67,13 +55,7 @@ export function useAuth<
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
+	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthAuthenticatedSnapshotTyped<
 	HasUserInfo,
 	HasOidc,
