@@ -29,7 +29,7 @@ Long version;
 
 ```tsx
 import { createAuth } from "@mvd/auth";
-import { useAuth, useAuthenticatedAuth } from "@mvd/auth/react";
+import { useAuth, useAuthState } from "@mvd/auth/react";
 
 const auth = createAuth({
     clientId: "myClientID",
@@ -41,7 +41,7 @@ const auth = createAuth({
 });
 
 function LoginGate() {
-    const snapshot = useAuth(auth);
+  const snapshot = useAuthState(auth);
 
     if (snapshot.status === "loading") return <p>Logging in...</p>;
     if (snapshot.status === "unauthenticated") {
@@ -52,7 +52,7 @@ function LoginGate() {
 }
 
 function AuthenticatedProfile() {
-    const authenticated = useAuthenticatedAuth(auth);
+  const authenticated = useAuth(auth);
     return (
         <>
             <h4>Access Token</h4>
@@ -76,9 +76,9 @@ npm install @mvd/auth
 
 ## API
 
-### AuthSnapshot values (from `useAuth()`)
+### AuthSnapshot values (from `useAuthState()`)
 
-`useAuth(auth)` now returns a discriminated union. Guard once on `status`, then access strongly typed authenticated values without optional chaining.
+`useAuthState(auth)` returns the full discriminated union. Guard once on `status` when you need to branch on loading/unauthenticated/authenticated.
 
 ```typescript
 type AuthSnapshot =
@@ -94,19 +94,26 @@ type AuthSnapshot =
 			status: "authenticated";
 			error: string | null;
 			token: string;
-			tokenData: TokenData | null;
-			idToken: string | null;
-			idTokenData: TokenData | null;
+      tokenData: TokenData;
+      // Present only when `oidc: true`
+      idToken?: string;
+      idTokenData?: TokenData;
+      // Present only when `userInfo: true`
+      userInfo?: UserInfo;
 	  };
 ```
 
-### `useAuthenticatedAuth()`
+`tokenData` is always available for authenticated users (access tokens must be JWTs).
+Set `oidc: true` to require and expose `idToken`/`idTokenData`.
+When `userInfo: true`, `userInfo` is required for authenticated snapshots.
 
-Use `useAuthenticatedAuth(auth)` when the component requires an authenticated user. It returns only the authenticated branch and throws if auth is currently `loading` or `unauthenticated`.
+### `useAuth()`
+
+Use `useAuth(auth)` when the component requires an authenticated user. It returns only the authenticated branch and throws if auth is currently `loading` or `unauthenticated`.
 
 This pattern gives better DX in protected routes/components because token fields are guaranteed.
 
-You can also enforce non-null decoded/userinfo payloads:
+You can also use decoded token and userinfo payloads directly:
 
 ```tsx
 type AccessClaims = { sub: string; name: string };
@@ -118,17 +125,14 @@ const auth = createAuth({
   authorizationEndpoint: "https://myAuthProvider.com/auth",
   tokenEndpoint: "https://myAuthProvider.com/token",
   redirectUri: "http://localhost:3000/",
-  requireData: true,
-  autoFetchUserInfo: true,
+  oidc: true,
+  userInfo: true,
   userInfoEndpoint: "https://myAuthProvider.com/userinfo",
-  mapTokenData: (data): AccessClaims => data as AccessClaims,
-  mapIdTokenData: (data): IdClaims => data as IdClaims,
-  mapUserInfo: (info): Profile => info as Profile,
 });
 
 function StrictProfile() {
-  const authenticated = useAuthenticatedAuth(auth);
-  // tokenData, idTokenData and userInfo are non-null and strongly typed here
+  const authenticated = useAuth(auth);
+  // tokenData and idTokenData are strongly typed here (oidc: true)
   return <pre>{authenticated.userInfo.preferred_username}</pre>;
 }
 ```
@@ -137,7 +141,7 @@ function StrictProfile() {
 
 These patterns require **no explicit TypeScript generic parameters**. The `auth` instance type is inferred from `createAuth(...)` config.
 
-#### 1) Basic auth (nullable decoded payloads)
+#### 1) Basic auth
 
 ```tsx
 const auth = createAuth({
@@ -147,14 +151,14 @@ const auth = createAuth({
   redirectUri: "http://localhost:3000/",
 });
 
-const snapshot = useAuth(auth);
+const snapshot = useAuthState(auth);
 if (snapshot.status === "authenticated") {
-  // tokenData: TokenData | null
+  // tokenData: TokenData
   console.log(snapshot.tokenData);
 }
 ```
 
-#### 2) Strict decoded payloads (non-null tokenData / idTokenData)
+#### 2) OIDC token payloads
 
 ```tsx
 type AccessClaims = { sub: string; name: string };
@@ -165,18 +169,18 @@ const auth = createAuth({
   authorizationEndpoint: "https://myAuthProvider.com/auth",
   tokenEndpoint: "https://myAuthProvider.com/token",
   redirectUri: "http://localhost:3000/",
-  requireData: true,
-  mapTokenData: (data): AccessClaims => data as AccessClaims,
-  mapIdTokenData: (data): IdClaims => data as IdClaims,
+  oidc: true,
 });
 
-const authenticated = useAuthenticatedAuth(auth);
-// tokenData/idTokenData are non-null + strongly typed
-authenticated.tokenData.name;
-authenticated.idTokenData.email;
+const authenticated = useAuth(auth);
+// tokenData/idTokenData are decoded payload objects
+const accessClaims = authenticated.tokenData as AccessClaims;
+const idClaims = authenticated.idTokenData as IdClaims;
+accessClaims.name;
+idClaims.email;
 ```
 
-#### 3) Strict + UserInfo (non-null userInfo)
+#### 3) OIDC + UserInfo typing
 
 ```tsx
 type Profile = { sub: string; preferred_username: string };
@@ -186,23 +190,21 @@ const auth = createAuth({
   authorizationEndpoint: "https://myAuthProvider.com/auth",
   tokenEndpoint: "https://myAuthProvider.com/token",
   redirectUri: "http://localhost:3000/",
-  requireData: true,
-  autoFetchUserInfo: true,
+  oidc: true,
+  userInfo: true,
   userInfoEndpoint: "https://myAuthProvider.com/userinfo",
-  mapUserInfo: (info): Profile => info as Profile,
 });
 
-const authenticated = useAuthenticatedAuth(auth);
-authenticated.userInfo.preferred_username;
+const authenticated = useAuth(auth);
+const profile = authenticated.userInfo as Profile;
+profile.preferred_username;
 ```
 
 ### UserInfo typing based on config
 
-When `autoFetchUserInfo: true` is provided in config (and `userInfoEndpoint` is set), authenticated snapshots include:
+When `userInfo: true` is provided in config (and `userInfoEndpoint` is set), authenticated snapshots include:
 
 - `userInfo`
-- `userInfoInProgress`
-- `userInfoError`
 
 When userinfo fetching is not enabled, those fields are not exposed in authenticated snapshot types.
 
@@ -241,13 +243,12 @@ type AuthConfig = {
   // Which method to use for login. Can be 'redirect', 'replace', or 'popup'
   // Note that most browsers block popups by default. The library will print a warning and fallback to redirect if the popup is blocked
     loginMethod?: 'redirect' | 'replace' | 'popup'  // default: 'redirect'
-  // Whether or not to decode the access token (should be set to 'false' if the access token is not a JWT (e.g. from Github))
-    // If `false`, authenticated snapshot `tokenData` will be null
-  decodeToken?: boolean  // default: true
+  // Enable OIDC behavior. When true, id_token is required and exposed in authenticated snapshots.
+  oidc?: boolean  // default: false
     // Optional OpenID Connect userinfo endpoint
     userInfoEndpoint?: string // default: undefined
-    // Automatically fetch userinfo after login/refresh (requires userInfoEndpoint)
-    autoFetchUserInfo?: boolean // default: false
+    // Require userinfo as part of authenticated state (requires userInfoEndpoint)
+    userInfo?: boolean // default: false
     // Credentials policy used when fetching userinfo
     userInfoRequestCredentials?: 'same-origin' | 'include' | 'omit' // default: 'same-origin'
   // By default, the package will automatically redirect the user to the login server if not already logged in.

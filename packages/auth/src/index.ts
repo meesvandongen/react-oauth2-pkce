@@ -4,7 +4,6 @@ export { FetchError } from "./errors";
 export type {
 	AuthAuthenticatedSnapshot,
 	AuthAuthenticatedSnapshotTyped,
-	AuthAuthenticatedSnapshotWithRequiredData,
 	AuthConfig,
 	AuthLoadingSnapshot,
 	AuthSnapshot,

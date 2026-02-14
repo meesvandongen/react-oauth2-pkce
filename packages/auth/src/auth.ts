@@ -41,10 +41,10 @@ import { fetchUserInfo } from "./userInfo";
 
 type AuthEventMap<
 	HasUserInfo extends boolean,
+	HasOidc extends boolean,
 	AccessTokenData extends TokenData,
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
-	RequireData extends boolean,
 > = {
 	"pre-login": undefined;
 	"post-login": TokenResponse;
@@ -52,10 +52,10 @@ type AuthEventMap<
 	error: Error;
 	"state-change": AuthSnapshot<
 		HasUserInfo,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
-		UserInfoData,
-		RequireData
+		UserInfoData
 	>;
 };
 
@@ -95,78 +95,46 @@ function parseStoredValue<T>(value: string | null, fallback: T): T {
 
 export function createAuth<
 	const HasUserInfo extends boolean,
+	const HasOidc extends boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
 >(
 	authConfig: AuthConfig<
 		HasUserInfo,
-		true,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
 		UserInfoData
 	>,
-): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, true>;
-export function createAuth<
-	const HasUserInfo extends boolean,
-	AccessTokenData extends TokenData = TokenData,
-	IdTokenData extends TokenData = TokenData,
-	UserInfoData extends UserInfo = UserInfo,
->(
-	authConfig: AuthConfig<
-		HasUserInfo,
-		boolean,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
-): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, boolean>;
-export function createAuth<
-	const HasUserInfo extends boolean,
-	AccessTokenData extends TokenData = TokenData,
-	IdTokenData extends TokenData = TokenData,
-	UserInfoData extends UserInfo = UserInfo,
->(
-	authConfig: AuthConfig<
-		HasUserInfo,
-		boolean,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
-): Auth<HasUserInfo, AccessTokenData, IdTokenData, UserInfoData, boolean> {
+): Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData> {
 	return new Auth(authConfig);
 }
 
 export class Auth<
 	HasUserInfo extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
-	RequireData extends boolean = boolean,
 > extends TypedEventTarget<
-	AuthEventMap<
-		HasUserInfo,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData,
-		RequireData
-	>
+	AuthEventMap<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>
 > {
 	#storage: Storage;
 	#state: InternalState;
 	#snapshot: AuthSnapshot<
 		HasUserInfo,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
-		UserInfoData,
-		RequireData
+		UserInfoData
 	>;
 	#didFetchTokens = false;
 	#userInfoForToken?: string;
+	#userInfoFetchInProgress = false;
 	readonly #config: InternalConfig<
 		HasUserInfo,
-		RequireData,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
 		UserInfoData
@@ -175,7 +143,7 @@ export class Auth<
 	constructor(
 		authConfig: AuthConfig<
 			HasUserInfo,
-			RequireData,
+			HasOidc,
 			AccessTokenData,
 			IdTokenData,
 			UserInfoData
@@ -190,9 +158,6 @@ export class Auth<
 
 		this.#startRefreshInterval();
 		window.addEventListener("storage", this.#handleStorageEvent);
-		// Handle initial load after current call stack is complete.
-		// This gives consumers a chance to subscribe to events before any are emitted.
-		// e.g. autoLogin might emit events immediately.
 		queueMicrotask(() => {
 			this.#handleInitialLoad();
 		});
@@ -206,10 +171,6 @@ export class Auth<
 	public getSnapshot = () => {
 		return this.#snapshot;
 	};
-
-	public get requiresData(): RequireData {
-		return this.#config.requireData as RequireData;
-	}
 
 	public login = (options?: LoginOptions): void => {
 		this.#clearSession();
@@ -274,8 +235,6 @@ export class Auth<
 				undefined,
 			),
 			userInfo: undefined,
-			userInfoInProgress: false,
-			userInfoError: null,
 			loginInProgress: parseStoredValue<boolean>(
 				this.#storage.getItem(this.#key("loginInProgress")),
 				false,
@@ -330,10 +289,10 @@ export class Auth<
 		state: InternalState,
 	): AuthSnapshot<
 		HasUserInfo,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
-		UserInfoData,
-		RequireData
+		UserInfoData
 	> {
 		if (state.loginInProgress) {
 			return {
@@ -349,45 +308,76 @@ export class Auth<
 			};
 		}
 
-		const tokenData = this.#config.decodeToken
-			? (decodeAccessToken(state.token) as AccessTokenData | undefined)
-			: null;
-		const idTokenData = decodeIdToken(state.idToken) as IdTokenData | undefined;
-		const mappedTokenData =
-			tokenData === null || tokenData === undefined
-				? null
-				: this.#config.mapTokenData
-					? this.#config.mapTokenData(tokenData as TokenData)
-					: tokenData;
-		const mappedIdTokenData =
-			idTokenData === undefined
-				? null
-				: this.#config.mapIdTokenData
-					? this.#config.mapIdTokenData(idTokenData as TokenData)
-					: idTokenData;
-		const mappedUserInfo =
-			state.userInfo === undefined
-				? null
-				: this.#config.mapUserInfo
-					? this.#config.mapUserInfo(state.userInfo)
-					: (state.userInfo as UserInfoData);
-		if (this.#config.autoFetchUserInfo) {
+		const tokenData = decodeAccessToken(state.token) as AccessTokenData;
+
+		if (this.#config.userInfo && !state.userInfo) {
+			return {
+				status: "loading",
+				error: state.error,
+			};
+		}
+
+		const mappedUserInfo = state.userInfo as UserInfoData | undefined;
+		if (this.#config.userInfo) {
+			if (this.#config.oidc) {
+				if (!state.idToken) {
+					throw new Error(
+						"OIDC is enabled, but no id_token is available in state.",
+					);
+				}
+				const idTokenData = decodeIdToken(state.idToken) as IdTokenData;
+				return {
+					status: "authenticated",
+					error: state.error,
+					token: state.token,
+					tokenData,
+					idToken: state.idToken,
+					idTokenData,
+					userInfo: mappedUserInfo,
+				} as unknown as AuthAuthenticatedSnapshotTyped<
+					HasUserInfo,
+					HasOidc,
+					AccessTokenData,
+					IdTokenData,
+					UserInfoData
+				>;
+			}
+
 			return {
 				status: "authenticated",
 				error: state.error,
 				token: state.token,
-				tokenData: mappedTokenData,
-				idToken: state.idToken ?? null,
-				idTokenData: mappedIdTokenData,
+				tokenData,
 				userInfo: mappedUserInfo,
-				userInfoInProgress: state.userInfoInProgress,
-				userInfoError: state.userInfoError,
 			} as unknown as AuthAuthenticatedSnapshotTyped<
 				HasUserInfo,
+				HasOidc,
 				AccessTokenData,
 				IdTokenData,
-				UserInfoData,
-				RequireData
+				UserInfoData
+			>;
+		}
+
+		if (this.#config.oidc) {
+			if (!state.idToken) {
+				throw new Error(
+					"OIDC is enabled, but no id_token is available in state.",
+				);
+			}
+			const idTokenData = decodeIdToken(state.idToken) as IdTokenData;
+			return {
+				status: "authenticated",
+				error: state.error,
+				token: state.token,
+				tokenData,
+				idToken: state.idToken,
+				idTokenData,
+			} as unknown as AuthAuthenticatedSnapshotTyped<
+				HasUserInfo,
+				HasOidc,
+				AccessTokenData,
+				IdTokenData,
+				UserInfoData
 			>;
 		}
 
@@ -395,15 +385,13 @@ export class Auth<
 			status: "authenticated",
 			error: state.error,
 			token: state.token,
-			tokenData: mappedTokenData,
-			idToken: state.idToken ?? null,
-			idTokenData: mappedIdTokenData,
+			tokenData,
 		} as unknown as AuthAuthenticatedSnapshotTyped<
 			HasUserInfo,
+			HasOidc,
 			AccessTokenData,
 			IdTokenData,
-			UserInfoData,
-			RequireData
+			UserInfoData
 		>;
 	}
 
@@ -415,25 +403,19 @@ export class Auth<
 			return undefined;
 		}
 		const token = this.#state.token;
-		this.#setState(
-			{ userInfoInProgress: true, userInfoError: null },
-			{ persist: false },
-		);
+		this.#userInfoFetchInProgress = true;
 		try {
 			const fetchedUserInfo = await fetchUserInfo({
 				userInfoEndpoint: this.#config.userInfoEndpoint,
 				accessToken: token,
 				credentials: this.#config.userInfoRequestCredentials,
 			});
-			const userInfo = this.#config.mapUserInfo
-				? this.#config.mapUserInfo(fetchedUserInfo)
-				: (fetchedUserInfo as UserInfoData);
+			const userInfo = fetchedUserInfo as UserInfoData;
 			this.#userInfoForToken = token;
 			this.#setState(
 				{
 					userInfo: userInfo as UserInfo,
-					userInfoInProgress: false,
-					userInfoError: null,
+					error: null,
 				},
 				{ persist: false },
 			);
@@ -441,18 +423,20 @@ export class Auth<
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : String(error);
 			this.#setState(
-				{ userInfoInProgress: false, userInfoError: message },
+				{ error: message, userInfo: undefined },
 				{ persist: false },
 			);
 			throw error;
+		} finally {
+			this.#userInfoFetchInProgress = false;
 		}
 	};
 
-	#autoFetchUserInfoIfEnabled(): void {
-		if (!this.#config.autoFetchUserInfo) return;
+	#ensureUserInfoIfEnabled(): void {
+		if (!this.#config.userInfo) return;
 		if (!this.#config.userInfoEndpoint) return;
 		if (!this.#state.token) return;
-		if (this.#state.userInfoInProgress) return;
+		if (this.#userInfoFetchInProgress) return;
 		if (this.#userInfoForToken === this.#state.token && this.#state.userInfo) {
 			return;
 		}
@@ -477,8 +461,6 @@ export class Auth<
 				refreshTokenExpire: undefined,
 				idToken: undefined,
 				userInfo: undefined,
-				userInfoInProgress: false,
-				userInfoError: null,
 				loginInProgress: false,
 				refreshInProgress: false,
 			},
@@ -487,9 +469,15 @@ export class Auth<
 	}
 
 	#handleTokenResponse(response: TokenResponse) {
+		if (this.#config.oidc && !response.id_token) {
+			throw new Error(
+				"OIDC is enabled, but token endpoint response did not include an id_token.",
+			);
+		}
+
 		let tokenExp = FALLBACK_EXPIRE_TIME;
 		try {
-			if (response.id_token) {
+			if (this.#config.oidc && response.id_token) {
 				const decodedToken = decodeJWT(response.id_token);
 				tokenExp = Math.round(Number(decodedToken.exp) - Date.now() / 1000);
 			}
@@ -507,12 +495,12 @@ export class Auth<
 			token: response.access_token,
 			tokenExpire: epochAtSecondsFromNow(tokenExpiresIn),
 			userInfo: undefined,
-			userInfoInProgress: false,
-			userInfoError: null,
 			error: null,
 		};
-		if (response.id_token) {
+		if (this.#config.oidc && response.id_token) {
 			nextState.idToken = response.id_token;
+		} else {
+			nextState.idToken = undefined;
 		}
 		if (response.refresh_token) {
 			nextState.refreshToken = response.refresh_token;
@@ -526,7 +514,7 @@ export class Auth<
 			}
 		}
 		this.#setState(nextState, { persist: true });
-		this.#autoFetchUserInfoIfEnabled();
+		this.#ensureUserInfoIfEnabled();
 	}
 
 	#handleExpiredRefreshToken(initial = false): void {
@@ -667,6 +655,9 @@ export class Auth<
 		if (!this.#state.token && this.#config.autoLogin) {
 			return this.login({ method: this.#config.loginMethod });
 		}
+		if (this.#state.token && !epochTimeIsPast(this.#state.tokenExpire)) {
+			this.#ensureUserInfoIfEnabled();
+		}
 		this.#refreshAccessToken(true);
 	}
 
@@ -694,6 +685,8 @@ export class Auth<
 		switch (key) {
 			case "token":
 				partial.token = nextValue as string | undefined;
+				partial.userInfo = undefined;
+				partial.error = null;
 				break;
 			case "tokenExpire":
 				partial.tokenExpire = nextValue as number | undefined;
@@ -721,6 +714,9 @@ export class Auth<
 				return;
 		}
 		this.#setState(partial, { persist: false });
+		if (key === "token") {
+			this.#ensureUserInfoIfEnabled();
+		}
 	};
 
 	async #redirectToLogin(options?: LoginOptions): Promise<void> {

@@ -18,8 +18,8 @@ test("calls onRefreshTokenExpire when refresh token expires", async ({
 		"not-called",
 	);
 
-	// Fast forward past refresh token expiry
-	await page.clock.fastForward(15000);
+	// Fast forward past refresh token expiry and refresh interval jitter
+	await page.clock.fastForward(30000);
 
 	await expect(page.getByTestId("refresh-expired-status")).toHaveText("called");
 });
@@ -46,8 +46,8 @@ test("calls onRefreshTokenExpire when refresh fails with 400", async ({
 		"not-called",
 	);
 
-	// Fast forward past access token expiry to trigger refresh
-	await page.clock.fastForward(6000);
+	// Fast forward past access token expiry and refresh interval jitter to trigger refresh
+	await page.clock.fastForward(30000);
 
 	await expect(page.getByTestId("refresh-expired-status")).toHaveText("called");
 });

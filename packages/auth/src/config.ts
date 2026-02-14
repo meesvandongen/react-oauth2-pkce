@@ -7,21 +7,21 @@ function stringIsUnset(value: string | null | undefined) {
 
 export function createInternalConfig<
 	HasUserInfo extends boolean,
-	RequireData extends boolean,
+	HasOidc extends boolean,
 	AccessTokenData extends import("./types").TokenData,
 	IdTokenData extends import("./types").TokenData,
 	UserInfoData extends import("./types").UserInfo,
 >(
 	passedConfig: AuthConfig<
 		HasUserInfo,
-		RequireData,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
 		UserInfoData
 	>,
 ): InternalConfig<
 	HasUserInfo,
-	RequireData,
+	HasOidc,
 	AccessTokenData,
 	IdTokenData,
 	UserInfoData
@@ -29,9 +29,8 @@ export function createInternalConfig<
 	const config = {
 		autoLogin: true,
 		clearURL: true,
-		decodeToken: true,
-		requireData: false,
-		autoFetchUserInfo: false,
+		oidc: false,
+		userInfo: false,
 		userInfoRequestCredentials: "same-origin",
 		scope: undefined,
 		loginMethod: "redirect",
@@ -43,7 +42,7 @@ export function createInternalConfig<
 		...passedConfig,
 	} as InternalConfig<
 		HasUserInfo,
-		RequireData,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
 		UserInfoData
@@ -54,14 +53,14 @@ export function createInternalConfig<
 
 export function validateConfig<
 	HasUserInfo extends boolean,
-	RequireData extends boolean,
+	HasOidc extends boolean,
 	AccessTokenData extends import("./types").TokenData,
 	IdTokenData extends import("./types").TokenData,
 	UserInfoData extends import("./types").UserInfo,
 >(
 	config: InternalConfig<
 		HasUserInfo,
-		RequireData,
+		HasOidc,
 		AccessTokenData,
 		IdTokenData,
 		UserInfoData
@@ -79,9 +78,7 @@ export function validateConfig<
 	if (stringIsUnset(config?.redirectUri)) {
 		throw Error("'redirectUri' must be set");
 	}
-	if (config.autoFetchUserInfo && stringIsUnset(config?.userInfoEndpoint)) {
-		throw Error(
-			"'userInfoEndpoint' must be set when 'autoFetchUserInfo' is true",
-		);
+	if (config.userInfo && stringIsUnset(config?.userInfoEndpoint)) {
+		throw Error("'userInfoEndpoint' must be set when 'userInfo' is true");
 	}
 }

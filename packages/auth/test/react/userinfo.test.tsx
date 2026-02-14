@@ -5,9 +5,12 @@ import { createAuth } from "../../src";
 // @ts-ignore
 global.fetch = vi.fn();
 
+const jwt =
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMiLCJlbWFpbCI6ImFAYi5jIiwiaWF0IjoxNTE2MjM5MDIyfQ.Sfl";
+
 describe("userinfo", () => {
-	test("fetchUserInfo uses opaque access token and updates snapshot", async () => {
-		localStorage.setItem("ROCP_token", JSON.stringify("opaque-access-token"));
+	test("with userInfo=true, auth becomes authenticated only after userinfo is loaded", async () => {
+		localStorage.setItem("ROCP_token", JSON.stringify(jwt));
 		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
 
 		// @ts-ignore
@@ -22,26 +25,29 @@ describe("userinfo", () => {
 
 		const core = createAuth({
 			autoLogin: false,
-			autoFetchUserInfo: true,
+			userInfo: true,
 			clientId: "myClientID",
 			authorizationEndpoint: "myAuthEndpoint",
 			tokenEndpoint: "myTokenEndpoint",
 			redirectUri: "http://localhost/",
 			userInfoEndpoint: "myUserInfoEndpoint",
-			decodeToken: true,
 		});
 
-		await core.fetchUserInfo();
+		expect(core.getSnapshot().status).toBe("loading");
 
 		await waitFor(() => {
 			expect(global.fetch).toHaveBeenCalledWith("myUserInfoEndpoint", {
 				method: "GET",
 				headers: {
-					Authorization: "Bearer opaque-access-token",
+					Authorization: `Bearer ${jwt}`,
 					Accept: "application/json",
 				},
 				credentials: "same-origin",
 			});
+		});
+
+		await waitFor(() => {
+			expect(core.getSnapshot().status).toBe("authenticated");
 		});
 
 		const snapshot = core.getSnapshot();
@@ -49,28 +55,22 @@ describe("userinfo", () => {
 		if (snapshot.status !== "authenticated") {
 			throw new Error("Expected authenticated snapshot in userinfo test");
 		}
-		expect(snapshot.userInfo?.sub).toBe("123");
-		expect(snapshot.userInfo?.email).toBe("a@b.c");
-		// access token is opaque -> no decoded JWT data
-		expect(snapshot.tokenData).toBeNull();
+		expect(snapshot.userInfo!.sub).toBe("123");
+		expect(snapshot.userInfo!.email).toBe("a@b.c");
+		expect(snapshot.tokenData.sub).toBe("123");
 	});
 
-	test("does not warn when decodeToken=true and access token is opaque", async () => {
-		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	test("throws when persisted access token is opaque", () => {
 		localStorage.setItem("ROCP_token", JSON.stringify("opaque-access-token"));
 		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
-		createAuth({
-			autoLogin: false,
-			clientId: "myClientID",
-			authorizationEndpoint: "myAuthEndpoint",
-			tokenEndpoint: "myTokenEndpoint",
-			redirectUri: "http://localhost/",
-			decodeToken: true,
-		});
-
-		// Wait for Auth's queued microtask initial load.
-		await Promise.resolve();
-
-		expect(warn).not.toHaveBeenCalled();
+		expect(() =>
+			createAuth({
+				autoLogin: false,
+				clientId: "myClientID",
+				authorizationEndpoint: "myAuthEndpoint",
+				tokenEndpoint: "myTokenEndpoint",
+				redirectUri: "http://localhost/",
+			})
+		).toThrow();
 	});
 });

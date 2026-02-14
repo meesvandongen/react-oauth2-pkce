@@ -11,6 +11,9 @@ function looksLikeJwt(token: string): boolean {
  */
 export const decodeJWT = (token: string): TokenData => {
 	try {
+		if (!looksLikeJwt(token)) {
+			throw Error("Token is not a JWT (expected three dot-separated segments)");
+		}
 		const base64Url = token.split(".")[1];
 		const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
 		const jsonPayload = decodeURIComponent(
@@ -22,33 +25,14 @@ export const decodeJWT = (token: string): TokenData => {
 		return JSON.parse(jsonPayload);
 	} catch (e) {
 		console.error(e);
-		throw Error(
-			"Failed to decode the access token.\n\tIs it a proper JSON Web Token?\n\t" +
-				"You can disable JWT decoding by setting the 'decodeToken' value to 'false' the configuration.",
-		);
+		throw Error("Failed to decode token.\n\tA JWT is required.");
 	}
 };
 
-export const decodeAccessToken = (
-	token: string | null | undefined,
-): TokenData | undefined => {
-	if (!token || !token.length) return undefined;
-	if (!looksLikeJwt(token)) return undefined;
-	try {
-		return decodeJWT(token);
-	} catch (e) {
-		console.warn(`Failed to decode access token: ${(e as Error).message}`);
-	}
+export const decodeAccessToken = (token: string): TokenData => {
+	return decodeJWT(token);
 };
 
-export const decodeIdToken = (
-	idToken: string | null | undefined,
-): TokenData | undefined => {
-	if (!idToken || !idToken.length) return undefined;
-	if (!looksLikeJwt(idToken)) return undefined;
-	try {
-		return decodeJWT(idToken);
-	} catch (e) {
-		console.warn(`Failed to decode idToken: ${(e as Error).message}`);
-	}
+export const decodeIdToken = (idToken: string): TokenData => {
+	return decodeJWT(idToken);
 };

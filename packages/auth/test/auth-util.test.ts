@@ -6,8 +6,8 @@ import type { InternalConfig } from "../src/types";
 
 const authConfig: InternalConfig = {
 	autoLogin: false,
-	decodeToken: false,
-	autoFetchUserInfo: false,
+	oidc: false,
+	userInfo: false,
 	userInfoRequestCredentials: "same-origin",
 	clientId: "myClientID",
 	authorizationEndpoint: "myAuthEndpoint",
@@ -19,7 +19,6 @@ const authConfig: InternalConfig = {
 	refreshTokenExpiryStrategy: "renewable",
 	storageKeyPrefix: "ROCP_",
 	refreshWithScope: true,
-	requireData: false,
 	loginMethod: "redirect",
 	extraTokenParameters: {
 		prompt: true,

@@ -33,11 +33,11 @@ const store = createAuth({
 	clientId: "test-app",
 	authorizationEndpoint: "http://localhost:5556/idp/auth",
 	tokenEndpoint: "http://localhost:5556/idp/token",
+	userInfo: searchParams.get("userinfo") === "true",
 	userInfoEndpoint:
 		searchParams.get("userinfo") === "true"
 			? "http://localhost:5556/idp/userinfo"
 			: undefined,
-	autoFetchUserInfo: searchParams.get("autoFetchUserInfo") === "true",
 	logoutEndpoint:
 		searchParams.get("logout") === "true"
 			? "http://localhost:5556/idp/logout"
@@ -45,7 +45,7 @@ const store = createAuth({
 	logoutRedirect: searchParams.get("logoutRedirect") || undefined,
 	redirectUri,
 	scope: "openid profile email offline_access",
-	decodeToken: searchParams.get("decodeToken") !== "false",
+	oidc: searchParams.get("oidc") !== "false",
 	autoLogin: searchParams.get("autoLogin") === "true",
 	clearURL: searchParams.get("clearURL") !== "false",
 	storage: (searchParams.get("storage") as "local" | "session") || "session",

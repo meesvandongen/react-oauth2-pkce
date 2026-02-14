@@ -1,5 +1,5 @@
 import { Auth } from "@mvd/auth";
-import { useAuth, useAuthenticatedAuth } from "@mvd/auth/react";
+import { useAuth, useAuthState } from "@mvd/auth/react";
 import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
@@ -8,7 +8,7 @@ interface AuthStatusPanelProps {
 }
 
 export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
-	const snapshot = useAuth(store);
+	const snapshot = useAuthState(store);
 	const loginInProgress = snapshot.status === "loading";
 	const token = snapshot.status === "authenticated" ? snapshot.token : null;
 	const error = snapshot.error;
@@ -34,7 +34,7 @@ export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
 }
 
 function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
-	const auth = useAuthenticatedAuth(store);
+	const auth = useAuth(store);
 
 	return (
 		<div style={{ marginTop: "20px" }}>
@@ -57,14 +57,6 @@ function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
 			{"userInfo" in auth && (
 				<>
 					<h3>UserInfo</h3>
-					{auth.userInfoInProgress && (
-						<div data-testid="user-info-in-progress">Loading userinfo...</div>
-					)}
-					{auth.userInfoError && (
-						<div className="error" data-testid="user-info-error">
-							{auth.userInfoError}
-						</div>
-					)}
 					<pre data-testid="user-info">
 						{JSON.stringify(auth.userInfo, null, 2)}
 					</pre>
@@ -75,7 +67,7 @@ function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
 }
 
 export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
-	const snapshot = useAuth(store);
+	const snapshot = useAuthState(store);
 	if (snapshot.status !== "authenticated") {
 		return null;
 	}

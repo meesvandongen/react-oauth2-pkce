@@ -58,20 +58,17 @@ type BaseAuthConfig = {
 	tokenEndpoint: string;
 	redirectUri: string;
 	scope?: string;
+	oidc?: boolean;
+	userInfo?: boolean;
 	state?: string;
 	logoutEndpoint?: string;
 	logoutRedirect?: string;
 	loginMethod?: LoginMethod;
-	decodeToken?: boolean;
 	/**
 	 * OpenID Connect UserInfo endpoint URL.
-	 * If set, you can call `auth.fetchUserInfo()` to load user claims even when access tokens are opaque.
+	 * If set, you can call `auth.fetchUserInfo()` to load user claims.
 	 */
 	userInfoEndpoint?: string;
-	/**
-	 * If true, userinfo will automatically be fetched after login/refresh (requires `userInfoEndpoint`).
-	 */
-	autoFetchUserInfo?: boolean;
 	/**
 	 * Credentials policy for the UserInfo request.
 	 * Note: most providers only require the Authorization header; cookies are typically not needed.
@@ -89,33 +86,28 @@ type BaseAuthConfig = {
 	storageKeyPrefix?: string;
 	refreshWithScope?: boolean;
 	tokenRequestCredentials?: RequestCredentials;
-	/**
-	 * If true, authenticated snapshots require decoded tokenData/idTokenData (and userInfo when enabled).
-	 * This enables non-null payload types in `useAuthenticatedAuth()`.
-	 */
-	requireData?: boolean;
 };
 
-type AuthConfigWithAutoFetchUserInfo = BaseAuthConfig & {
-	autoFetchUserInfo: true;
+type AuthConfigWithUserInfo = BaseAuthConfig & {
+	userInfo: true;
 	userInfoEndpoint: string;
 };
 
-type AuthConfigWithoutAutoFetchUserInfo = BaseAuthConfig & {
-	autoFetchUserInfo?: false;
+type AuthConfigWithoutUserInfo = BaseAuthConfig & {
+	userInfo?: false;
 };
 
 // Input from users of the package, some optional values.
-// If `autoFetchUserInfo` is true, `userInfoEndpoint` is required and snapshot types include userinfo fields.
+// If `userInfo` is true, `userInfoEndpoint` is required and snapshot types include userinfo fields.
 export type AuthConfig<
 	HasUserInfo extends boolean = boolean,
-	RequireData extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
 > = AuthConfigTyped<
 	HasUserInfo,
-	RequireData,
+	HasOidc,
 	AccessTokenData,
 	IdTokenData,
 	UserInfoData
@@ -123,62 +115,37 @@ export type AuthConfig<
 
 export type AuthConfigTyped<
 	HasUserInfo extends boolean = boolean,
-	RequireData extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
 > = ([HasUserInfo] extends [true]
-	? AuthConfigWithAutoFetchUserInfo
+	? AuthConfigWithUserInfo
 	: [HasUserInfo] extends [false]
-		? AuthConfigWithoutAutoFetchUserInfo
-		: BaseAuthConfig) & {
-	/**
-	 * Optional mapper for decoded access token payload.
-	 * Return type is inferred as `tokenData` type in snapshots.
-	 */
-	mapTokenData?: (tokenData: TokenData) => AccessTokenData;
-	/**
-	 * Optional mapper for decoded ID token payload.
-	 * Return type is inferred as `idTokenData` type in snapshots.
-	 */
-	mapIdTokenData?: (tokenData: TokenData) => IdTokenData;
-	/**
-	 * Optional mapper for fetched userinfo payload.
-	 * Return type is inferred as `userInfo` type in snapshots.
-	 */
-	mapUserInfo?: (userInfo: UserInfo) => UserInfoData;
-} & ([RequireData] extends [true]
-		? { requireData: true }
-		: [RequireData] extends [false]
-			? { requireData?: false }
-			: { requireData?: boolean });
+		? AuthConfigWithoutUserInfo
+		: BaseAuthConfig) &
+	([HasOidc] extends [true]
+		? { oidc: true }
+		: [HasOidc] extends [false]
+			? { oidc?: false }
+			: { oidc?: boolean });
 
 export type RefreshTokenExpiredEvent = {
 	login: (options?: LoginOptions) => void;
 };
 
-type PayloadMappers<
-	AccessTokenData extends TokenData,
-	IdTokenData extends TokenData,
-	UserInfoData extends UserInfo,
-> = {
-	mapTokenData?: (tokenData: TokenData) => AccessTokenData;
-	mapIdTokenData?: (tokenData: TokenData) => IdTokenData;
-	mapUserInfo?: (userInfo: UserInfo) => UserInfoData;
-};
-
 // The AuthProviders internal config type. All values will be set by user provided, or default values
 export type InternalConfig<
 	HasUserInfo extends boolean = boolean,
-	RequireData extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
 > = WithRequired<
-	BaseAuthConfig & PayloadMappers<AccessTokenData, IdTokenData, UserInfoData>,
+	BaseAuthConfig,
 	| "loginMethod"
-	| "decodeToken"
-	| "autoFetchUserInfo"
+	| "oidc"
+	| "userInfo"
 	| "userInfoRequestCredentials"
 	| "autoLogin"
 	| "clearURL"
@@ -187,30 +154,29 @@ export type InternalConfig<
 	| "storageKeyPrefix"
 	| "refreshWithScope"
 	| "tokenRequestCredentials"
-	| "requireData"
 > &
 	([HasUserInfo] extends [true]
 		? {
-				autoFetchUserInfo: true;
+				userInfo: true;
 				userInfoEndpoint: string;
 			}
 		: [HasUserInfo] extends [false]
 			? {
-					autoFetchUserInfo: false;
+					userInfo: false;
 				}
 			:
 					| {
-							autoFetchUserInfo: true;
+							userInfo: true;
 							userInfoEndpoint: string;
 					  }
 					| {
-							autoFetchUserInfo: false;
+							userInfo: false;
 					  }) &
-	([RequireData] extends [true]
-		? { requireData: true }
-		: [RequireData] extends [false]
-			? { requireData: false }
-			: { requireData: boolean });
+	([HasOidc] extends [true]
+		? { oidc: true }
+		: [HasOidc] extends [false]
+			? { oidc: false }
+			: { oidc: boolean });
 
 export type InternalState = {
 	token?: string;
@@ -219,8 +185,6 @@ export type InternalState = {
 	refreshTokenExpire?: number;
 	idToken?: string;
 	userInfo?: UserInfo;
-	userInfoInProgress: boolean;
-	userInfoError: string | null;
 	loginInProgress: boolean;
 	refreshInProgress: boolean;
 	loginMethod: LoginMethod;
@@ -232,26 +196,41 @@ type UserInfoSnapshotFields<
 	UserInfoData extends UserInfo,
 > = [HasUserInfo] extends [true]
 	? {
-			userInfo: UserInfoData | null;
-			userInfoInProgress: boolean;
-			userInfoError: string | null;
+			userInfo: UserInfoData;
 		}
 	: [HasUserInfo] extends [false]
 		? {
 				userInfo?: never;
-				userInfoInProgress?: never;
-				userInfoError?: never;
 			}
 		:
 				| {
-						userInfo: UserInfoData | null;
-						userInfoInProgress: boolean;
-						userInfoError: string | null;
+						userInfo: UserInfoData;
 				  }
 				| {
 						userInfo?: never;
-						userInfoInProgress?: never;
-						userInfoError?: never;
+				  };
+
+type OidcSnapshotFields<
+	HasOidc extends boolean,
+	IdTokenData extends TokenData,
+> = [HasOidc] extends [true]
+	? {
+			idToken: string;
+			idTokenData: IdTokenData;
+		}
+	: [HasOidc] extends [false]
+		? {
+				idToken?: never;
+				idTokenData?: never;
+			}
+		:
+				| {
+						idToken: string;
+						idTokenData: IdTokenData;
+				  }
+				| {
+						idToken?: never;
+						idTokenData?: never;
 				  };
 
 type AuthSnapshotBase = {
@@ -266,73 +245,46 @@ export type AuthUnauthenticatedSnapshot = AuthSnapshotBase & {
 	status: "unauthenticated";
 };
 
-export type AuthAuthenticatedSnapshot<HasUserInfo extends boolean = boolean> =
-	AuthAuthenticatedSnapshotTyped<
-		HasUserInfo,
-		TokenData,
-		TokenData,
-		UserInfo,
-		boolean
-	>;
+export type AuthAuthenticatedSnapshot<
+	HasUserInfo extends boolean = boolean,
+	HasOidc extends boolean = boolean,
+> = AuthAuthenticatedSnapshotTyped<
+	HasUserInfo,
+	HasOidc,
+	TokenData,
+	TokenData,
+	UserInfo
+>;
 
 export type AuthAuthenticatedSnapshotTyped<
 	HasUserInfo extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
-	RequireData extends boolean = boolean,
 > = AuthSnapshotBase &
-	UserInfoSnapshotFields<HasUserInfo, UserInfoData> & {
+	UserInfoSnapshotFields<HasUserInfo, UserInfoData> &
+	OidcSnapshotFields<HasOidc, IdTokenData> & {
 		status: "authenticated";
 		token: string;
-		tokenData: [RequireData] extends [true]
-			? AccessTokenData
-			: AccessTokenData | null;
-		idToken: string | null;
-		idTokenData: [RequireData] extends [true]
-			? IdTokenData
-			: IdTokenData | null;
+		tokenData: AccessTokenData;
 	};
-
-type UserInfoRequiredField<
-	HasUserInfo extends boolean,
-	UserInfoData extends UserInfo,
-> = [HasUserInfo] extends [true] ? { userInfo: UserInfoData } : {};
-
-export type AuthAuthenticatedSnapshotWithRequiredData<
-	HasUserInfo extends boolean = boolean,
-	AccessTokenData extends TokenData = TokenData,
-	IdTokenData extends TokenData = TokenData,
-	UserInfoData extends UserInfo = UserInfo,
-> = Omit<
-	AuthAuthenticatedSnapshotTyped<
-		HasUserInfo,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData,
-		true
-	>,
-	"tokenData" | "idTokenData" | "userInfo"
-> & {
-	tokenData: AccessTokenData;
-	idTokenData: IdTokenData;
-} & UserInfoRequiredField<HasUserInfo, UserInfoData>;
 
 export type AuthSnapshot<
 	HasUserInfo extends boolean = boolean,
+	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
 	IdTokenData extends TokenData = TokenData,
 	UserInfoData extends UserInfo = UserInfo,
-	RequireData extends boolean = boolean,
 > =
 	| AuthLoadingSnapshot
 	| AuthUnauthenticatedSnapshot
 	| AuthAuthenticatedSnapshotTyped<
 			HasUserInfo,
+			HasOidc,
 			AccessTokenData,
 			IdTokenData,
-			UserInfoData,
-			RequireData
+			UserInfoData
 	  >;
 
 export type LoginOptions = {

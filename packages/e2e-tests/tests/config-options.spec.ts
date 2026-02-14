@@ -16,12 +16,13 @@ test("respects storageKeyPrefix", async ({ page }) => {
 	expect(storage).toContain("config_idToken");
 });
 
-test("skips decoding when decodeToken is false", async ({ page }) => {
-	await page.goto("/configurable?decodeToken=false");
+test("does not expose id token fields when oidc is false", async ({ page }) => {
+	await page.goto("/configurable?oidc=false");
 	await login(page);
 	await expectAuthenticated(page);
 
-	await expect(page.getByTestId("token-data")).toBeEmpty();
+	await expect(page.getByTestId("id-token")).toHaveText("");
+	await expect(page.getByTestId("id-token-data")).toHaveText("");
 });
 
 test("preserves URL parameters when clearURL is false", async ({ page }) => {

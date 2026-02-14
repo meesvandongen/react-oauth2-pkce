@@ -1,6 +1,6 @@
 import { beforeEach, vi } from "vitest";
 import { type AuthConfig, createAuth } from "../../src";
-import { useAuth } from "../../src/react";
+import { useAuthState } from "../../src/react";
 
 beforeEach(() => {
 	localStorage.clear();
@@ -18,7 +18,6 @@ export const authConfig: AuthConfig = {
 	redirectUri: "http://localhost/",
 	logoutRedirect: "primary-logout-redirect",
 	scope: "someScope openid",
-	decodeToken: false,
 	state: "testState",
 	loginMethod: "redirect",
 	extraLogoutParameters: {
@@ -34,7 +33,7 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 	const core = createAuth(config);
 
 	const AuthConsumer = () => {
-		const snapshot = useAuth(core);
+		const snapshot = useAuthState(core);
 		const loginInProgress = snapshot.status === "loading";
 		const token =
 			snapshot.status === "authenticated" ? snapshot.token : undefined;
@@ -67,5 +66,5 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 		);
 	};
 
-	return { core, AuthConsumer, useAuth };
+	return { core, AuthConsumer, useAuthState };
 }
