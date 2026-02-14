@@ -2,8 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
 	test: {
-		environment: "happy-dom",
 		globals: true,
-		setupFiles: "./tests/vitestSetup.ts",
+		environment: "happy-dom",
+		setupFiles: ["./test/vitestSetup.ts", "./test/react/vitestSetup.ts"],
 	},
 });

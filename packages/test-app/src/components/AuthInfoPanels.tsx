@@ -1,5 +1,5 @@
-import { Auth } from "@mvd/auth-core";
-import { useAuth } from "@mvd/auth-react";
+import { Auth } from "@mvd/auth";
+import { useAuth } from "@mvd/auth/react";
 import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {

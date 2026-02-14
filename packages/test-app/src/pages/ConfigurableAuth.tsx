@@ -1,4 +1,4 @@
-import { createAuth } from "@mvd/auth-core";
+import { createAuth } from "@mvd/auth";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { AuthActionButtons } from "../components/AuthActionButtons";

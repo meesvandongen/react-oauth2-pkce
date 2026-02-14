@@ -1,6 +1,6 @@
-import { AuthConfig, createAuth } from "@mvd/auth-core";
 import { beforeEach, vi } from "vitest";
-import { useAuth } from "../src";
+import { type AuthConfig, createAuth } from "../../src";
+import { useAuth } from "../../src/react";
 
 beforeEach(() => {
 	localStorage.clear();

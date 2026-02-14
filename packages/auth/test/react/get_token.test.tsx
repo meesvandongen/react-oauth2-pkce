@@ -1,5 +1,5 @@
-import { TokenResponse } from "@mvd/auth-core";
 import { render, waitFor } from "@testing-library/react";
+import type { TokenResponse } from "../../src";
 import { authConfig, createAuthHarness } from "./test-utils";
 
 // @ts-ignore

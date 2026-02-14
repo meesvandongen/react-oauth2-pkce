@@ -1,6 +1,6 @@
-import { createAuth } from "@mvd/auth-core";
 import { waitFor } from "@testing-library/react";
 import { vi } from "vitest";
+import { createAuth } from "../../src";
 
 // @ts-ignore
 global.fetch = vi.fn();

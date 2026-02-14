@@ -20,8 +20,8 @@ export function getRefreshExpiresIn(
 	// Github: 8 hours
 	// FusionAuth: 7 days
 	return (
-		response.refresh_expires_in ||
-		response.refresh_token_expires_in ||
+		response.refresh_expires_in ??
+		response.refresh_token_expires_in ??
 		Math.max(1800, tokenExpiresIn * 1.5)
 	);
 }

@@ -1,4 +1,4 @@
-import { Auth } from "@mvd/auth-core";
+import { Auth } from "@mvd/auth";
 
 interface AuthActionButtonsProps {
 	store: Auth;

@@ -10,8 +10,7 @@
 		"lint": "biome check ."
 	},
 	"dependencies": {
-		"@mvd/auth-core": "workspace:*",
-		"@mvd/auth-react": "workspace:*",
+		"@mvd/auth": "workspace:*",
 		"react": "19.2.3",
 		"react-dom": "19.2.3",
 		"react-router": "^7.1.5"

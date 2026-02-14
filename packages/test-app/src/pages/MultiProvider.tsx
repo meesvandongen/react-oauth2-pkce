@@ -1,4 +1,4 @@
-import { AuthConfig, createAuth } from "@mvd/auth-core";
+import { AuthConfig, createAuth } from "@mvd/auth";
 import { AuthActionButtons } from "../components/AuthActionButtons";
 import { AuthStatusPanel } from "../components/AuthInfoPanels";
 
