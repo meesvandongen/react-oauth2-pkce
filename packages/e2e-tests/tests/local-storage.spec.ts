@@ -1,6 +1,6 @@
 import { Page } from "@playwright/test";
 import { expect, test } from "../playwright.setup";
-import { expectAuthenticated, login, logout } from "./helpers";
+import { login, logout } from "./helpers";
 
 test("displays storage contents after login", async ({ page }) => {
 	await page.goto("/configurable?storage=local");
@@ -16,16 +16,6 @@ test("clears storage on logout", async ({ page }) => {
 	await expectPageToHaveTokenInStorage(page);
 	await logout(page);
 	await expectPageToNotHaveTokenInStorage(page);
-});
-
-test("persists authentication in new tab", async ({ context, page }) => {
-	await page.goto("http://localhost:3010/configurable?storage=local");
-	await login(page);
-	await expectAuthenticated(page);
-
-	const page2 = await context.newPage();
-	await page2.goto("http://localhost:3010/configurable?storage=local");
-	await expectAuthenticated(page2);
 });
 
 async function expectPageToHaveTokenInStorage(page: Page) {

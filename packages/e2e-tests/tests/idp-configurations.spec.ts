@@ -162,3 +162,24 @@ test("supports opaque access_token + userinfo endpoint", async ({ page }) => {
 	await expect(page.getByTestId("token-data")).toHaveText("");
 	await expect(page.getByTestId("user-info")).toContainText("test@example.com");
 });
+
+test("keeps auth state when userinfo auto-fetch fails", async ({ page }) => {
+	await page.route("**/userinfo", async (route) => {
+		await route.fulfill({
+			status: 401,
+			contentType: "text/plain",
+			body: "Unauthorized",
+		});
+	});
+
+	await page.goto("/configurable?userinfo=true&autoFetchUserInfo=true");
+	await login(page);
+	await expectAuthenticated(page);
+
+	await expect(page.getByTestId("user-info-error")).toContainText(
+		"Unauthorized",
+	);
+	await expect(page.getByTestId("user-info")).not.toContainText(
+		"test@example.com",
+	);
+});

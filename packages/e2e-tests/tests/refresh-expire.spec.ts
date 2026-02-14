@@ -5,7 +5,6 @@ import { expectAuthenticated, login } from "./helpers";
 test("calls onRefreshTokenExpire when refresh token expires", async ({
 	page,
 	oidc,
-	network,
 }) => {
 	oidc.refreshTokenLifetimeSeconds = 10; // 10 seconds
 	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds

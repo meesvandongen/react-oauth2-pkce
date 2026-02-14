@@ -84,6 +84,7 @@ test("Logs in again when refresh token is invalid", async ({
 	await expect.poll(() => tokenEndpointCalled).toBe(true);
 
 	await expectAuthenticated(page);
+	await expectNoAuthError(page);
 });
 
 test("re-use refresh token", async ({ page, network, oidc }) => {
@@ -158,7 +159,7 @@ test("Retries refresh after transient error", async ({
 
 	await page.clock.fastForward("05:05");
 
-	// await expect.poll(() => refreshAttempted).toBe(true);
+	await expect.poll(() => refreshAttempted).toBe(true);
 	await expectAuthError(page);
 	await expectAuthenticated(page);
 

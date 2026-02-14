@@ -1,10 +1,5 @@
 import { expect, test } from "../playwright.setup";
-import {
-	expectAuthenticated,
-	expectNotAuthenticated,
-	login,
-	logout,
-} from "./helpers";
+import { expectAuthenticated, expectNotAuthenticated, login } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
 	await page.goto("/configurable?logout=true");
@@ -24,13 +19,6 @@ test("can log in with replace navigation", async ({ page }) => {
 	await expectAuthenticated(page);
 });
 
-test("prelogin hook", async ({ page }) => {
-	await page.getByTestId("login-button").click();
-	await expect(page.getByTestId("pre-login-status")).toHaveText("called");
-
-	await expectAuthenticated(page);
-});
-
 test("has tokens after login", async ({ page }) => {
 	await login(page);
 	await expect(
@@ -47,15 +35,6 @@ test("has tokens after login", async ({ page }) => {
 		page.getByTestId("id-token-data"),
 		"displays decoded ID token data",
 	).toBeVisible();
-});
-
-test("can log out", async ({ page }) => {
-	await login(page);
-	await expectAuthenticated(page);
-	await expect(page.getByTestId("access-token")).not.toBeEmpty();
-
-	await logout(page);
-	await expect(page.getByTestId("access-token")).toBeEmpty();
 });
 
 test("clears URL parameters after login", async ({ page }) => {

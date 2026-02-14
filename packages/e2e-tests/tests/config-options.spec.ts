@@ -69,7 +69,7 @@ test("does not include scope in refresh request when refreshWithScope is false",
 	expect(refreshRequestData).not.toContain("scope=");
 });
 
-test("uses manual expiry overrides", async ({ page, network, oidc }) => {
+test("uses manual expiry overrides", async ({ page, oidc }) => {
 	oidc.accessTokenLifetimeSeconds = 20;
 	await page.goto("/configurable?tokenExpiresIn=10");
 	await page.clock.install();
@@ -84,11 +84,7 @@ test("uses manual expiry overrides", async ({ page, network, oidc }) => {
 	await expect(page.getByTestId("access-token")).not.toHaveText(initialToken!);
 });
 
-test("respects absolute refreshTokenExpiryStrategy", async ({
-	page,
-	network,
-	oidc,
-}) => {
+test("respects absolute refreshTokenExpiryStrategy", async ({ page, oidc }) => {
 	oidc.refreshTokenLifetimeSeconds = 100;
 	oidc.accessTokenLifetimeSeconds = 40;
 
