@@ -20,17 +20,17 @@
 		"lint": "biome check ."
 	},
 	"devDependencies": {
-		"@typescript/native-preview": "7.0.0-dev.20260214.1",
 		"@testing-library/jest-dom": "^6.6.3",
-		"@testing-library/react": "^16.0.1",
+		"@testing-library/react": "^16.3.2",
 		"@testing-library/user-event": "^14.5.2",
-		"@types/node": "^25.0.3",
-		"@types/react": "^19.2.7",
-		"happy-dom": "^20.0.11",
-		"react": "19.2.3",
-		"tsdown": "^0.18.1",
+		"@types/node": "^25.2.3",
+		"@types/react": "^19.2.14",
+		"@typescript/native-preview": "7.0.0-dev.20260214.1",
+		"happy-dom": "^20.6.1",
+		"react": "19.2.4",
+		"tsdown": "^0.20.3",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.16"
+		"vitest": "^4.0.18"
 	},
 	"files": [
 		"dist/"
@@ -38,7 +38,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@mvd/event-target": "^0.0.1",
-		"oauth4webapi": "^3.8.3"
+		"oauth4webapi": "^3.8.4"
 	},
 	"peerDependencies": {
 		"react": ">=16.8.0"
@@ -47,5 +47,6 @@
 		"react": {
 			"optional": true
 		}
-	}
+	},
+	"sideEffects": false
 }
