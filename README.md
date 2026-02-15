@@ -29,7 +29,7 @@ Long version;
 
 ```tsx
 import { createAuth } from "@mvd/auth";
-import { useAuth, useAuthState } from "@mvd/auth/react";
+import { useAuth, useAuthRequired } from "@mvd/auth/react";
 
 const auth = createAuth({
     clientId: "myClientID",
@@ -41,7 +41,7 @@ const auth = createAuth({
 });
 
 function LoginGate() {
-  const snapshot = useAuthState(auth);
+  const snapshot = useAuth(auth);
 
     if (snapshot.status === "loading") return <p>Logging in...</p>;
     if (snapshot.status === "unauthenticated") {
@@ -52,7 +52,7 @@ function LoginGate() {
 }
 
 function AuthenticatedProfile() {
-  const authenticated = useAuth(auth);
+  const authenticated = useAuthRequired(auth);
     return (
         <>
             <h4>Access Token</h4>
@@ -76,9 +76,9 @@ npm install @mvd/auth
 
 ## API
 
-### AuthSnapshot values (from `useAuthState()`)
+### AuthSnapshot values (from `useAuth()`)
 
-`useAuthState(auth)` returns the full discriminated union. Guard once on `status` when you need to branch on loading/unauthenticated/authenticated.
+`useAuth(auth)` returns the full discriminated union. Guard once on `status` when you need to branch on loading/unauthenticated/authenticated.
 
 ```typescript
 type AuthSnapshot =
@@ -107,9 +107,9 @@ type AuthSnapshot =
 Set `oidc: true` to require and expose `idToken`/`idTokenData`.
 When `userInfo: true`, `userInfo` is required for authenticated snapshots.
 
-### `useAuth()`
+### `useAuthRequired()`
 
-Use `useAuth(auth)` when the component requires an authenticated user. It returns only the authenticated branch and throws if auth is currently `loading` or `unauthenticated`.
+Use `useAuthRequired(auth)` when the component requires an authenticated user. It returns only the authenticated branch and throws if auth is currently `loading` or `unauthenticated`.
 
 This pattern gives better DX in protected routes/components because token fields are guaranteed.
 
@@ -131,7 +131,7 @@ const auth = createAuth({
 });
 
 function StrictProfile() {
-  const authenticated = useAuth(auth);
+  const authenticated = useAuthRequired(auth);
   // tokenData and idTokenData are strongly typed here (oidc: true)
   return <pre>{authenticated.userInfo.preferred_username}</pre>;
 }
@@ -151,7 +151,7 @@ const auth = createAuth({
   redirectUri: "http://localhost:3000/",
 });
 
-const snapshot = useAuthState(auth);
+const snapshot = useAuth(auth);
 if (snapshot.status === "authenticated") {
   // tokenData: TokenData
   console.log(snapshot.tokenData);
@@ -172,7 +172,7 @@ const auth = createAuth({
   oidc: true,
 });
 
-const authenticated = useAuth(auth);
+const authenticated = useAuthRequired(auth);
 // tokenData/idTokenData are decoded payload objects
 const accessClaims = authenticated.tokenData as AccessClaims;
 const idClaims = authenticated.idTokenData as IdClaims;
@@ -195,7 +195,7 @@ const auth = createAuth({
   userInfoEndpoint: "https://myAuthProvider.com/userinfo",
 });
 
-const authenticated = useAuth(auth);
+const authenticated = useAuthRequired(auth);
 const profile = authenticated.userInfo as Profile;
 profile.preferred_username;
 ```

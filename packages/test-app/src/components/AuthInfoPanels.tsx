@@ -1,5 +1,5 @@
 import { Auth } from "@mvd/auth";
-import { useAuth, useAuthState } from "@mvd/auth/react";
+import { useAuth, useAuthRequired } from "@mvd/auth/react";
 import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
@@ -8,7 +8,7 @@ interface AuthStatusPanelProps {
 }
 
 export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
-	const snapshot = useAuthState(store);
+	const snapshot = useAuth(store);
 	const loginInProgress = snapshot.status === "loading";
 	const token = snapshot.status === "authenticated" ? snapshot.token : null;
 	const error = snapshot.error;
@@ -34,7 +34,7 @@ export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
 }
 
 function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
-	const auth = useAuth(store);
+	const auth = useAuthRequired(store);
 
 	return (
 		<div style={{ marginTop: "20px" }}>
@@ -67,7 +67,7 @@ function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
 }
 
 export function AuthTokenDetails({ store }: AuthStatusPanelProps) {
-	const snapshot = useAuthState(store);
+	const snapshot = useAuth(store);
 	if (snapshot.status !== "authenticated") {
 		return null;
 	}

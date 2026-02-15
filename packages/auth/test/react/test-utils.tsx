@@ -1,6 +1,6 @@
 import { beforeEach, vi } from "vitest";
 import { type AuthConfig, createAuth } from "../../src";
-import { useAuthState } from "../../src/react";
+import { useAuth } from "../../src/react";
 
 beforeEach(() => {
 	localStorage.clear();
@@ -30,10 +30,10 @@ export const authConfig: AuthConfig = {
 };
 
 export function createAuthHarness(config: AuthConfig = authConfig) {
-	const core = createAuth(config);
+	const auth = createAuth(config);
 
 	const AuthConsumer = () => {
-		const snapshot = useAuthState(core);
+		const snapshot = useAuth(auth);
 		const loginInProgress = snapshot.status === "loading";
 		const token =
 			snapshot.status === "authenticated" ? snapshot.token : undefined;
@@ -45,14 +45,14 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 				<div>{tokenData?.name}</div>
 				<button
 					type="button"
-					onClick={() => core.logout({ state: "logoutState" })}
+					onClick={() => auth.logout({ state: "logoutState" })}
 				>
 					Log out
 				</button>
 				<button
 					type="button"
 					onClick={() =>
-						core.login({
+						auth.login({
 							state: "loginState",
 						})
 					}
@@ -66,5 +66,5 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 		);
 	};
 
-	return { core, AuthConsumer, useAuthState };
+	return { auth, AuthConsumer };
 }

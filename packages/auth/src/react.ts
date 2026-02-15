@@ -11,14 +11,14 @@ import type {
  * Returns full auth state (loading | unauthenticated | authenticated).
  * Consumers can call this hook directly; no React provider is needed.
  */
-export function useAuthState<
+export function useAuth<
 	HasUserInfo extends boolean,
 	HasOidc extends boolean,
 	AccessTokenData extends TokenData,
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
+	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthSnapshot<
 	HasUserInfo,
 	HasOidc,
@@ -26,21 +26,21 @@ export function useAuthState<
 	IdTokenData,
 	UserInfoData
 > {
-	return useSyncExternalStore(core.subscribe, core.getSnapshot);
+	return useSyncExternalStore(auth.subscribe, auth.getSnapshot);
 }
 
 /**
  * Returns only the authenticated snapshot.
  * Throws if auth is currently loading or unauthenticated.
  */
-export function useAuth<
+export function useAuthRequired<
 	HasUserInfo extends boolean,
 	HasOidc extends boolean,
 	AccessTokenData extends TokenData,
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
+	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthAuthenticatedSnapshotTyped<
 	HasUserInfo,
 	HasOidc,
@@ -48,14 +48,14 @@ export function useAuth<
 	IdTokenData,
 	UserInfoData
 >;
-export function useAuth<
+export function useAuthRequired<
 	HasUserInfo extends boolean,
 	HasOidc extends boolean,
 	AccessTokenData extends TokenData,
 	IdTokenData extends TokenData,
 	UserInfoData extends UserInfo,
 >(
-	core: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
+	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
 ): AuthAuthenticatedSnapshotTyped<
 	HasUserInfo,
 	HasOidc,
@@ -63,10 +63,10 @@ export function useAuth<
 	IdTokenData,
 	UserInfoData
 > {
-	const snapshot = useAuthState(core);
+	const snapshot = useAuth(auth);
 	if (snapshot.status !== "authenticated") {
 		throw new Error(
-			`Expected authenticated auth state, got '${snapshot.status}'. Guard this route/component first or use useAuthState().`,
+			`Expected authenticated auth state, got '${snapshot.status}'. Guard this route/component first or use useAuth().`,
 		);
 	}
 

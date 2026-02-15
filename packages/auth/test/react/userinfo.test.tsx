@@ -23,7 +23,7 @@ describe("userinfo", () => {
 			headers: new Headers({ "content-type": "application/json" }),
 		});
 
-		const core = createAuth({
+		const auth = createAuth({
 			autoLogin: false,
 			userInfo: true,
 			clientId: "myClientID",
@@ -33,7 +33,7 @@ describe("userinfo", () => {
 			userInfoEndpoint: "myUserInfoEndpoint",
 		});
 
-		expect(core.getSnapshot().status).toBe("loading");
+		expect(auth.getSnapshot().status).toBe("loading");
 
 		await waitFor(() => {
 			expect(global.fetch).toHaveBeenCalledWith("myUserInfoEndpoint", {
@@ -47,10 +47,10 @@ describe("userinfo", () => {
 		});
 
 		await waitFor(() => {
-			expect(core.getSnapshot().status).toBe("authenticated");
+			expect(auth.getSnapshot().status).toBe("authenticated");
 		});
 
-		const snapshot = core.getSnapshot();
+		const snapshot = auth.getSnapshot();
 		expect(snapshot.status).toBe("authenticated");
 		if (snapshot.status !== "authenticated") {
 			throw new Error("Expected authenticated snapshot in userinfo test");

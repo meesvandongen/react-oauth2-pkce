@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { createAuth } from "../../src";
-import { useAuth } from "../../src/react";
+import { useAuthRequired } from "../../src/react";
 
 const jwt =
 	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.Sfl";
 
-describe("useAuth (authenticated hook)", () => {
+describe("useAuthRequired (authenticated hook)", () => {
 	test("throws when persisted access token is opaque", () => {
 		localStorage.setItem("ROCP_token", JSON.stringify("opaque-access-token"));
 		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
@@ -26,7 +26,7 @@ describe("useAuth (authenticated hook)", () => {
 		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
 		localStorage.setItem("ROCP_idToken", JSON.stringify(jwt));
 
-		const core = createAuth({
+		const auth = createAuth({
 			autoLogin: false,
 			oidc: true,
 			clientId: "myClientID",
@@ -36,11 +36,11 @@ describe("useAuth (authenticated hook)", () => {
 		});
 
 		const StrictConsumer = () => {
-			const auth = useAuth(core);
+			const authenticated = useAuthRequired(auth);
 			return (
 				<>
-					<div data-testid="name">{auth.tokenData.name}</div>
-					<div data-testid="sub">{auth.idTokenData!.sub}</div>
+					<div data-testid="name">{authenticated.tokenData.name}</div>
+					<div data-testid="sub">{authenticated.idTokenData!.sub}</div>
 				</>
 			);
 		};
