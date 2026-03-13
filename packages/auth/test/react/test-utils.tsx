@@ -16,13 +16,9 @@ export const authConfig: AuthConfig = {
 	tokenEndpoint: "myTokenEndpoint",
 	logoutEndpoint: "myLogoutEndpoint",
 	redirectUri: "http://localhost/",
-	logoutRedirect: "primary-logout-redirect",
-	scope: "someScope openid",
+	scope: "someScope",
 	state: "testState",
 	loginMethod: "redirect",
-	extraLogoutParameters: {
-		testLogoutKey: "logoutValue",
-	},
 	extraTokenParameters: {
 		client_id: "anotherClientId",
 		testTokenKey: "tokenValue",
@@ -43,10 +39,7 @@ export function createAuthHarness(config: AuthConfig = authConfig) {
 		return (
 			<>
 				<div>{tokenData?.name}</div>
-				<button
-					type="button"
-					onClick={() => auth.logout({ state: "logoutState" })}
-				>
+				<button type="button" onClick={() => auth.logout()}>
 					Log out
 				</button>
 				<button

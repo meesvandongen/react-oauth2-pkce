@@ -21,14 +21,12 @@ describe("useAuthRequired (authenticated hook)", () => {
 		).toThrow();
 	});
 
-	test("returns typed, non-null claims when oidc is enabled", () => {
+	test("returns typed, non-null claims from the access token", () => {
 		localStorage.setItem("ROCP_token", JSON.stringify(jwt));
 		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
-		localStorage.setItem("ROCP_idToken", JSON.stringify(jwt));
 
 		const auth = createAuth({
 			autoLogin: false,
-			oidc: true,
 			clientId: "myClientID",
 			authorizationEndpoint: "myAuthEndpoint",
 			tokenEndpoint: "myTokenEndpoint",
@@ -40,7 +38,7 @@ describe("useAuthRequired (authenticated hook)", () => {
 			return (
 				<>
 					<div data-testid="name">{authenticated.tokenData.name}</div>
-					<div data-testid="sub">{authenticated.idTokenData!.sub}</div>
+					<div data-testid="sub">{authenticated.tokenData.sub}</div>
 				</>
 			);
 		};

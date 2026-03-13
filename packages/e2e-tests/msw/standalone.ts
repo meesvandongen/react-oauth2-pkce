@@ -1,15 +1,15 @@
 import { createMiddleware } from "@mswjs/http-middleware";
 import cors from "cors";
 import express from "express";
-import { createOidcHandlers } from "./handlers";
-import { MockOidcProvider } from "./mockOidcProvider";
+import { createOAuthHandlers } from "./handlers";
+import { MockOAuthProvider } from "./mockOAuthProvider";
 
-const provider = new MockOidcProvider();
+const provider = new MockOAuthProvider();
 
 const app = express();
 
 app.use(cors());
 
-app.use(createMiddleware(...createOidcHandlers(provider)));
+app.use(createMiddleware(...createOAuthHandlers(provider)));
 
 app.listen(5556);

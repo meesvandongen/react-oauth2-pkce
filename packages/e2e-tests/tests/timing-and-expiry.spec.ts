@@ -7,8 +7,8 @@ import {
 	login,
 } from "./helpers";
 
-test("refresh after expiry", async ({ page, oidc }) => {
-	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
+test("refresh after expiry", async ({ page, oauth }) => {
+	oauth.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
 	await page.goto("/configurable");
 
 	await page.clock.install();
@@ -18,20 +18,17 @@ test("refresh after expiry", async ({ page, oidc }) => {
 	const initialAccessToken = await page
 		.getByTestId("access-token")
 		.textContent();
-	const initialIdToken = await page.getByTestId("id-token").textContent();
 	expect(initialAccessToken).toBeTruthy();
-	expect(initialIdToken).toBeTruthy();
 
 	await page.clock.fastForward("06:00");
 
 	await expect(page.getByTestId("access-token")).not.toHaveText(
 		initialAccessToken!,
 	);
-	await expect(page.getByTestId("id-token")).not.toHaveText(initialIdToken!);
 });
 
-test("Logs in again when refresh token expires", async ({ page, oidc }) => {
-	oidc.refreshTokenLifetimeSeconds = 10 * 60; // 10 minutes
+test("Logs in again when refresh token expires", async ({ page, oauth }) => {
+	oauth.refreshTokenLifetimeSeconds = 10 * 60; // 10 minutes
 	await page.goto("/configurable?onRefreshTokenExpire=login");
 
 	await page.clock.install();
@@ -54,9 +51,9 @@ test("Logs in again when refresh token expires", async ({ page, oidc }) => {
 test("Logs in again when refresh token is invalid", async ({
 	page,
 	network,
-	oidc,
+	oauth,
 }) => {
-	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
+	oauth.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
 
 	await page.goto("/configurable");
 	await page.clock.install();
@@ -87,10 +84,10 @@ test("Logs in again when refresh token is invalid", async ({
 	await expectNoAuthError(page);
 });
 
-test("re-use refresh token", async ({ page, network, oidc }) => {
-	oidc.refreshTokenReuse = true;
-	oidc.refreshTokenRotation = false;
-	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
+test("re-use refresh token", async ({ page, network, oauth }) => {
+	oauth.refreshTokenReuse = true;
+	oauth.refreshTokenRotation = false;
+	oauth.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
 	await page.goto("/configurable");
 
 	await page.clock.install();
@@ -127,9 +124,9 @@ test("re-use refresh token", async ({ page, network, oidc }) => {
 test("Retries refresh after transient error", async ({
 	page,
 	network,
-	oidc,
+	oauth,
 }) => {
-	oidc.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
+	oauth.accessTokenLifetimeSeconds = 5 * 60; // 5 minutes
 	await page.goto("/configurable");
 
 	await page.clock.install();

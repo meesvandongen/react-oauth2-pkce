@@ -23,7 +23,7 @@
 		"cors": "^2.8.6",
 		"express": "^5.2.1",
 		"msw": "^2.12.10",
-		"openid-client": "^6.8.2",
+		"oauth4webapi": "^3.8.4",
 		"typescript": "5.9.3"
 	}
 }

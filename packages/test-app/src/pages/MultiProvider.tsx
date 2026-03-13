@@ -7,7 +7,7 @@ const baseConfig: AuthConfig = {
 	authorizationEndpoint: "http://localhost:5556/idp/auth",
 	tokenEndpoint: "http://localhost:5556/idp/token",
 	redirectUri: window.location.origin + "/multi-provider",
-	scope: "openid profile email offline_access",
+	scope: "api:read offline_access",
 	storage: "session",
 	autoLogin: false,
 };

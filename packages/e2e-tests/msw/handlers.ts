@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { type MockOidcProvider, OAuthError } from "./mockOidcProvider";
+import { type MockOAuthProvider, OAuthError } from "./mockOAuthProvider";
 
 async function parseFormBody(request: Request) {
 	const text = await request.text();
@@ -35,22 +35,8 @@ function createOAuthErrorResponse(error: unknown) {
 	);
 }
 
-export function createOidcHandlers(provider: MockOidcProvider) {
+export function createOAuthHandlers(provider: MockOAuthProvider) {
 	return [
-		http.get(
-			`**/.well-known/openid-configuration`,
-			withOAuthErrorHandling(async () => {
-				return HttpResponse.json(provider.getMetadata());
-			}),
-		),
-
-		http.get(
-			`**/keys`,
-			withOAuthErrorHandling(async () => {
-				return HttpResponse.json(provider.getJwks());
-			}),
-		),
-
 		http.get(
 			`**/auth`,
 			withOAuthErrorHandling(async ({ request }) => {
@@ -70,9 +56,8 @@ export function createOidcHandlers(provider: MockOidcProvider) {
 		http.get(
 			`**/logout`,
 			withOAuthErrorHandling(async ({ request }) => {
-				const { redirect, hasRedirect } = provider.createLogoutRedirect(
-					new URL(request.url),
-				);
+				const { redirect, hasRedirect } =
+					provider.createLogoutRedirect(request);
 				if (hasRedirect) {
 					return HttpResponse.redirect(redirect, 302);
 				}

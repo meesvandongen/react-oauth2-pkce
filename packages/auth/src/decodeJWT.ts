@@ -32,7 +32,3 @@ export const decodeJWT = (token: string): TokenData => {
 export const decodeAccessToken = (token: string): TokenData => {
 	return decodeJWT(token);
 };
-
-export const decodeIdToken = (idToken: string): TokenData => {
-	return decodeJWT(idToken);
-};

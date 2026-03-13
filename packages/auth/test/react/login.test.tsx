@@ -9,7 +9,7 @@ test("First page visit should redirect to auth provider for login", async () => 
 	await waitFor(() => {
 		expect(window.location.assign).toHaveBeenCalledWith(
 			expect.stringMatching(
-				/^myAuthEndpoint\?response_type=code&client_id=myClientID&redirect_uri=http%3A%2F%2Flocalhost%2F&code_challenge=.{43}&code_challenge_method=S256&scope=someScope\+openid&state=testState/gm,
+				/^myAuthEndpoint\?response_type=code&client_id=myClientID&redirect_uri=http%3A%2F%2Flocalhost%2F&code_challenge=.{43}&code_challenge_method=S256&scope=someScope&state=testState/gm,
 			),
 		);
 	});
@@ -28,7 +28,7 @@ test("First page visit should popup to auth provider for login", async () => {
 	await waitFor(() => {
 		expect(window.open).toHaveBeenCalledWith(
 			expect.stringMatching(
-				/^myAuthEndpoint\?response_type=code&client_id=myClientID&redirect_uri=http%3A%2F%2Flocalhost%2F&code_challenge=.{43}&code_challenge_method=S256&scope=someScope\+openid&state=testState/gm,
+				/^myAuthEndpoint\?response_type=code&client_id=myClientID&redirect_uri=http%3A%2F%2Flocalhost%2F&code_challenge=.{43}&code_challenge_method=S256&scope=someScope&state=testState/gm,
 			),
 			"loginPopup",
 			"width=600,height=600,top=100,left=300",

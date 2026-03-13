@@ -4,10 +4,10 @@ import { expectAuthenticated, login } from "./helpers";
 
 test("calls onRefreshTokenExpire when refresh token expires", async ({
 	page,
-	oidc,
+	oauth,
 }) => {
-	oidc.refreshTokenLifetimeSeconds = 10; // 10 seconds
-	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds
+	oauth.refreshTokenLifetimeSeconds = 10; // 10 seconds
+	oauth.accessTokenLifetimeSeconds = 5; // 5 seconds
 
 	await page.goto("/configurable?onRefreshTokenExpire=called");
 	await page.clock.install();
@@ -26,10 +26,10 @@ test("calls onRefreshTokenExpire when refresh token expires", async ({
 
 test("calls onRefreshTokenExpire when refresh fails with 400", async ({
 	page,
-	oidc,
+	oauth,
 	network,
 }) => {
-	oidc.accessTokenLifetimeSeconds = 5; // 5 seconds
+	oauth.accessTokenLifetimeSeconds = 5; // 5 seconds
 
 	await page.goto("/configurable?onRefreshTokenExpire=called");
 	await page.clock.install();

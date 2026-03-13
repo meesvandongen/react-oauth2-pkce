@@ -57,9 +57,14 @@ export async function login(page: Page | Locator) {
 }
 
 /**
- * Perform logout.
+ * Perform logout, then revisit the current app route to assert post-logout state.
  */
-export async function logout(page: Page | Locator) {
+export async function logout(page: Page) {
+	const returnUrl = page.url();
 	await page.getByTestId("logout-button").click();
+	await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+	if (page.url() !== returnUrl) {
+		await page.goto(returnUrl);
+	}
 	await expectNotAuthenticated(page);
 }

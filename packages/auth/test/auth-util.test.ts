@@ -6,14 +6,11 @@ import type { InternalConfig } from "../src/types";
 
 const authConfig: InternalConfig = {
 	autoLogin: false,
-	oidc: false,
-	userInfo: false,
-	userInfoRequestCredentials: "same-origin",
 	clientId: "myClientID",
 	authorizationEndpoint: "myAuthEndpoint",
 	tokenEndpoint: "myTokenEndpoint",
 	redirectUri: "http://localhost:5173/",
-	scope: "someScope openid",
+	scope: "someScope",
 	clearURL: false,
 	storage: "local",
 	refreshTokenExpiryStrategy: "renewable",

@@ -48,36 +48,11 @@ export function AuthActionButtons({ store }: AuthActionButtonsProps) {
 				onClick={() => store.login({ state: "login-custom-state-button" })}
 				data-testid="login-custom-state-button"
 			>
-				Log In (custom state)
+				Log In (round-trip state)
 			</button>
 
 			<button onClick={() => store.logout()} data-testid="logout-button">
 				Log Out
-			</button>
-
-			<button
-				onClick={() => store.logout({ state: "logout-with-state-button" })}
-				data-testid="logout-with-state-button"
-			>
-				Log Out (With State)
-			</button>
-			<button
-				onClick={() => store.logout({ logoutHint: "user@example.com" })}
-				data-testid="logout-with-hint-button"
-			>
-				Log Out (With Hint)
-			</button>
-			<button
-				onClick={() =>
-					store.logout({
-						state: "state-123",
-						logoutHint: "user@example.com",
-						additionalParameters: { extra_param: "value" },
-					})
-				}
-				data-testid="logout-full-button"
-			>
-				Log Out (Full Params)
 			</button>
 		</div>
 	);

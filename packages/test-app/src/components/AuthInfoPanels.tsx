@@ -45,23 +45,6 @@ function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
 			<pre data-testid="token-data">
 				{JSON.stringify(auth.tokenData, null, 2)}
 			</pre>
-
-			<h3>ID Token</h3>
-			<pre data-testid="id-token">{auth.idToken}</pre>
-
-			<h3>Decoded ID Token Data</h3>
-			<pre data-testid="id-token-data">
-				{JSON.stringify(auth.idTokenData, null, 2)}
-			</pre>
-
-			{"userInfo" in auth && (
-				<>
-					<h3>UserInfo</h3>
-					<pre data-testid="user-info">
-						{JSON.stringify(auth.userInfo, null, 2)}
-					</pre>
-				</>
-			)}
 		</div>
 	);
 }

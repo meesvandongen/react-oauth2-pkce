@@ -4,28 +4,15 @@ import type {
 	AuthAuthenticatedSnapshotTyped,
 	AuthSnapshot,
 	TokenData,
-	UserInfo,
 } from "./types";
 
 /**
  * Returns full auth state (loading | unauthenticated | authenticated).
  * Consumers can call this hook directly; no React provider is needed.
  */
-export function useAuth<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
-	AccessTokenData extends TokenData,
-	IdTokenData extends TokenData,
-	UserInfoData extends UserInfo,
->(
-	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
-): AuthSnapshot<
-	HasUserInfo,
-	HasOidc,
-	AccessTokenData,
-	IdTokenData,
-	UserInfoData
-> {
+export function useAuth<AccessTokenData extends TokenData>(
+	auth: Auth<AccessTokenData>,
+): AuthSnapshot<AccessTokenData> {
 	return useSyncExternalStore(auth.subscribe, auth.getSnapshot);
 }
 
@@ -33,36 +20,12 @@ export function useAuth<
  * Returns only the authenticated snapshot.
  * Throws if auth is currently loading or unauthenticated.
  */
-export function useAuthRequired<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
-	AccessTokenData extends TokenData,
-	IdTokenData extends TokenData,
-	UserInfoData extends UserInfo,
->(
-	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
-): AuthAuthenticatedSnapshotTyped<
-	HasUserInfo,
-	HasOidc,
-	AccessTokenData,
-	IdTokenData,
-	UserInfoData
->;
-export function useAuthRequired<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
-	AccessTokenData extends TokenData,
-	IdTokenData extends TokenData,
-	UserInfoData extends UserInfo,
->(
-	auth: Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>,
-): AuthAuthenticatedSnapshotTyped<
-	HasUserInfo,
-	HasOidc,
-	AccessTokenData,
-	IdTokenData,
-	UserInfoData
-> {
+export function useAuthRequired<AccessTokenData extends TokenData>(
+	auth: Auth<AccessTokenData>,
+): AuthAuthenticatedSnapshotTyped<AccessTokenData>;
+export function useAuthRequired<AccessTokenData extends TokenData>(
+	auth: Auth<AccessTokenData>,
+): AuthAuthenticatedSnapshotTyped<AccessTokenData> {
 	const snapshot = useAuth(auth);
 	if (snapshot.status !== "authenticated") {
 		throw new Error(

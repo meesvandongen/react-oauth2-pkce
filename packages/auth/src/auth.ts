@@ -8,12 +8,10 @@ import {
 	fetchTokens,
 	fetchWithRefreshToken,
 	redirectToLogout,
-	stateStorageKey,
 	urlHashStorageKey,
-	validateState,
 } from "./authentication";
 import { createInternalConfig } from "./config";
-import { decodeAccessToken, decodeIdToken, decodeJWT } from "./decodeJWT";
+import { decodeAccessToken, decodeJWT } from "./decodeJWT";
 import { FetchError } from "./errors";
 import { calculatePopupPosition } from "./popupUtils";
 import {
@@ -30,33 +28,17 @@ import type {
 	InternalState,
 	LoginMethod,
 	LoginOptions,
-	LogoutOptions,
-	PrimitiveRecord,
 	RefreshTokenExpiredEvent,
 	TokenData,
 	TokenResponse,
-	UserInfo,
 } from "./types";
-import { fetchUserInfo } from "./userInfo";
 
-type AuthEventMap<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
-	AccessTokenData extends TokenData,
-	IdTokenData extends TokenData,
-	UserInfoData extends UserInfo,
-> = {
+type AuthEventMap<AccessTokenData extends TokenData> = {
 	"pre-login": undefined;
 	"post-login": TokenResponse;
 	"refresh-token-expired": RefreshTokenExpiredEvent;
 	error: Error;
-	"state-change": AuthSnapshot<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>;
+	"state-change": AuthSnapshot<AccessTokenData>;
 };
 
 const PERSISTED_KEYS = [
@@ -64,7 +46,6 @@ const PERSISTED_KEYS = [
 	"tokenExpire",
 	"refreshToken",
 	"refreshTokenExpire",
-	"idToken",
 	"loginInProgress",
 	"refreshInProgress",
 	"loginMethod",
@@ -75,7 +56,6 @@ const STORAGE_KEY_MAP: Record<(typeof PERSISTED_KEYS)[number], string> = {
 	tokenExpire: "tokenExpire",
 	refreshToken: "refreshToken",
 	refreshTokenExpire: "refreshTokenExpire",
-	idToken: "idToken",
 	loginInProgress: "loginInProgress",
 	refreshInProgress: "refreshInProgress",
 	loginMethod: "loginMethod",
@@ -93,62 +73,22 @@ function parseStoredValue<T>(value: string | null, fallback: T): T {
 	}
 }
 
-export function createAuth<
-	const HasUserInfo extends boolean,
-	const HasOidc extends boolean,
-	AccessTokenData extends TokenData = TokenData,
-	IdTokenData extends TokenData = TokenData,
-	UserInfoData extends UserInfo = UserInfo,
->(
-	authConfig: AuthConfig<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
-): Auth<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData> {
+export function createAuth<AccessTokenData extends TokenData = TokenData>(
+	authConfig: AuthConfig<AccessTokenData>,
+): Auth<AccessTokenData> {
 	return new Auth(authConfig);
 }
 
 export class Auth<
-	HasUserInfo extends boolean = boolean,
-	HasOidc extends boolean = boolean,
 	AccessTokenData extends TokenData = TokenData,
-	IdTokenData extends TokenData = TokenData,
-	UserInfoData extends UserInfo = UserInfo,
-> extends TypedEventTarget<
-	AuthEventMap<HasUserInfo, HasOidc, AccessTokenData, IdTokenData, UserInfoData>
-> {
+> extends TypedEventTarget<AuthEventMap<AccessTokenData>> {
 	#storage: Storage;
 	#state: InternalState;
-	#snapshot: AuthSnapshot<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>;
+	#snapshot: AuthSnapshot<AccessTokenData>;
 	#didFetchTokens = false;
-	#userInfoForToken?: string;
-	#userInfoFetchInProgress = false;
-	readonly #config: InternalConfig<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>;
+	readonly #config: InternalConfig;
 
-	constructor(
-		authConfig: AuthConfig<
-			HasUserInfo,
-			HasOidc,
-			AccessTokenData,
-			IdTokenData,
-			UserInfoData
-		>,
-	) {
+	constructor(authConfig: AuthConfig<AccessTokenData>) {
 		super();
 		this.#config = createInternalConfig(authConfig);
 		this.#storage =
@@ -189,26 +129,13 @@ export class Auth<
 		});
 	};
 
-	public logout({
-		state,
-		logoutHint,
-		additionalParameters,
-	}: LogoutOptions = {}): void {
+	public logout(): void {
 		const token = this.#state.token;
 		const refreshToken = this.#state.refreshToken;
-		const idToken = this.#state.idToken;
 		this.#clearSession();
 		this.#setState({ error: null }, { persist: true });
 		if (this.#config?.logoutEndpoint && token) {
-			redirectToLogout(
-				this.#config,
-				token,
-				refreshToken,
-				idToken,
-				state,
-				logoutHint,
-				additionalParameters,
-			);
+			redirectToLogout(this.#config, token, refreshToken);
 		}
 	}
 
@@ -230,11 +157,6 @@ export class Auth<
 				this.#storage.getItem(this.#key("refreshTokenExpire")),
 				undefined,
 			),
-			idToken: parseStoredValue<string | undefined>(
-				this.#storage.getItem(this.#key("idToken")),
-				undefined,
-			),
-			userInfo: undefined,
 			loginInProgress: parseStoredValue<boolean>(
 				this.#storage.getItem(this.#key("loginInProgress")),
 				false,
@@ -285,15 +207,7 @@ export class Auth<
 		);
 	}
 
-	#computeSnapshot(
-		state: InternalState,
-	): AuthSnapshot<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	> {
+	#computeSnapshot(state: InternalState): AuthSnapshot<AccessTokenData> {
 		if (state.loginInProgress) {
 			return {
 				status: "loading",
@@ -310,142 +224,12 @@ export class Auth<
 
 		const tokenData = decodeAccessToken(state.token) as AccessTokenData;
 
-		if (this.#config.userInfo && !state.userInfo) {
-			return {
-				status: "loading",
-				error: state.error,
-			};
-		}
-
-		const mappedUserInfo = state.userInfo as UserInfoData | undefined;
-		if (this.#config.userInfo) {
-			if (this.#config.oidc) {
-				if (!state.idToken) {
-					throw new Error(
-						"OIDC is enabled, but no id_token is available in state.",
-					);
-				}
-				const idTokenData = decodeIdToken(state.idToken) as IdTokenData;
-				return {
-					status: "authenticated",
-					error: state.error,
-					token: state.token,
-					tokenData,
-					idToken: state.idToken,
-					idTokenData,
-					userInfo: mappedUserInfo,
-				} as unknown as AuthAuthenticatedSnapshotTyped<
-					HasUserInfo,
-					HasOidc,
-					AccessTokenData,
-					IdTokenData,
-					UserInfoData
-				>;
-			}
-
-			return {
-				status: "authenticated",
-				error: state.error,
-				token: state.token,
-				tokenData,
-				userInfo: mappedUserInfo,
-			} as unknown as AuthAuthenticatedSnapshotTyped<
-				HasUserInfo,
-				HasOidc,
-				AccessTokenData,
-				IdTokenData,
-				UserInfoData
-			>;
-		}
-
-		if (this.#config.oidc) {
-			if (!state.idToken) {
-				throw new Error(
-					"OIDC is enabled, but no id_token is available in state.",
-				);
-			}
-			const idTokenData = decodeIdToken(state.idToken) as IdTokenData;
-			return {
-				status: "authenticated",
-				error: state.error,
-				token: state.token,
-				tokenData,
-				idToken: state.idToken,
-				idTokenData,
-			} as unknown as AuthAuthenticatedSnapshotTyped<
-				HasUserInfo,
-				HasOidc,
-				AccessTokenData,
-				IdTokenData,
-				UserInfoData
-			>;
-		}
-
 		return {
 			status: "authenticated",
 			error: state.error,
 			token: state.token,
 			tokenData,
-		} as unknown as AuthAuthenticatedSnapshotTyped<
-			HasUserInfo,
-			HasOidc,
-			AccessTokenData,
-			IdTokenData,
-			UserInfoData
-		>;
-	}
-
-	public fetchUserInfo = async (): Promise<UserInfoData | undefined> => {
-		if (!this.#config.userInfoEndpoint) {
-			throw new Error("'userInfoEndpoint' must be set to fetch user info");
-		}
-		if (!this.#state.token) {
-			return undefined;
-		}
-		const token = this.#state.token;
-		this.#userInfoFetchInProgress = true;
-		try {
-			const fetchedUserInfo = await fetchUserInfo({
-				userInfoEndpoint: this.#config.userInfoEndpoint,
-				accessToken: token,
-				credentials: this.#config.userInfoRequestCredentials,
-			});
-			const userInfo = fetchedUserInfo as UserInfoData;
-			this.#userInfoForToken = token;
-			this.#setState(
-				{
-					userInfo: userInfo as UserInfo,
-					error: null,
-				},
-				{ persist: false },
-			);
-			return userInfo;
-		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : String(error);
-			this.#setState(
-				{ error: message, userInfo: undefined },
-				{ persist: false },
-			);
-			throw error;
-		} finally {
-			this.#userInfoFetchInProgress = false;
-		}
-	};
-
-	#ensureUserInfoIfEnabled(): void {
-		if (!this.#config.userInfo) return;
-		if (!this.#config.userInfoEndpoint) return;
-		if (!this.#state.token) return;
-		if (this.#userInfoFetchInProgress) return;
-		if (this.#userInfoForToken === this.#state.token && this.#state.userInfo) {
-			return;
-		}
-		this.fetchUserInfo().catch((error: unknown) => {
-			console.error(error);
-			if (error instanceof Error) {
-				this.dispatchTypedEvent("error", { detail: error });
-			}
-		});
+		} as AuthAuthenticatedSnapshotTyped<AccessTokenData>;
 	}
 
 	#key(key: string): string {
@@ -459,8 +243,6 @@ export class Auth<
 				token: undefined,
 				tokenExpire: undefined,
 				refreshTokenExpire: undefined,
-				idToken: undefined,
-				userInfo: undefined,
 				loginInProgress: false,
 				refreshInProgress: false,
 			},
@@ -469,20 +251,12 @@ export class Auth<
 	}
 
 	#handleTokenResponse(response: TokenResponse) {
-		if (this.#config.oidc && !response.id_token) {
-			throw new Error(
-				"OIDC is enabled, but token endpoint response did not include an id_token.",
-			);
-		}
-
 		let tokenExp = FALLBACK_EXPIRE_TIME;
 		try {
-			if (this.#config.oidc && response.id_token) {
-				const decodedToken = decodeJWT(response.id_token);
-				tokenExp = Math.round(Number(decodedToken.exp) - Date.now() / 1000);
-			}
+			const decodedToken = decodeJWT(response.access_token);
+			tokenExp = Math.round(Number(decodedToken.exp) - Date.now() / 1000);
 		} catch (e) {
-			console.warn(`Failed to decode idToken: ${(e as Error).message}`);
+			console.warn(`Failed to decode access token: ${(e as Error).message}`);
 		}
 
 		const tokenExpiresIn =
@@ -494,14 +268,8 @@ export class Auth<
 		const nextState: Partial<InternalState> = {
 			token: response.access_token,
 			tokenExpire: epochAtSecondsFromNow(tokenExpiresIn),
-			userInfo: undefined,
 			error: null,
 		};
-		if (this.#config.oidc && response.id_token) {
-			nextState.idToken = response.id_token;
-		} else {
-			nextState.idToken = undefined;
-		}
 		if (response.refresh_token) {
 			nextState.refreshToken = response.refresh_token;
 			if (
@@ -514,7 +282,6 @@ export class Auth<
 			}
 		}
 		this.#setState(nextState, { persist: true });
-		this.#ensureUserInfoIfEnabled();
 	}
 
 	#handleExpiredRefreshToken(initial = false): void {
@@ -597,7 +364,7 @@ export class Auth<
 			if (!urlParams.get("code")) {
 				const error_description =
 					urlParams.get("error_description") ||
-					"Bad authorization state. Refreshing the page and log in again might solve the issue.";
+					"The authentication redirect did not include an authorization code. Refreshing the page and logging in again might solve the issue.";
 				console.error(
 					`${error_description}\nExpected  to find a '?code=' parameter in the URL by now. Did the authentication get aborted or interrupted?`,
 				);
@@ -608,17 +375,6 @@ export class Auth<
 
 			if (!this.#didFetchTokens) {
 				this.#didFetchTokens = true;
-				try {
-					validateState(urlParams, this.#config.storage);
-				} catch (e: unknown) {
-					console.error(e);
-					this.#setState(
-						{ error: (e as Error).message, loginInProgress: false },
-						{ persist: true },
-					);
-					return;
-				}
-
 				fetchTokens(this.#config)
 					.then((tokens: TokenResponse) => {
 						this.#handleTokenResponse(tokens);
@@ -655,9 +411,6 @@ export class Auth<
 		if (!this.#state.token && this.#config.autoLogin) {
 			return this.login({ method: this.#config.loginMethod });
 		}
-		if (this.#state.token && !epochTimeIsPast(this.#state.tokenExpire)) {
-			this.#ensureUserInfoIfEnabled();
-		}
 		this.#refreshAccessToken(true);
 	}
 
@@ -685,7 +438,6 @@ export class Auth<
 		switch (key) {
 			case "token":
 				partial.token = nextValue as string | undefined;
-				partial.userInfo = undefined;
 				partial.error = null;
 				break;
 			case "tokenExpire":
@@ -696,9 +448,6 @@ export class Auth<
 				break;
 			case "refreshTokenExpire":
 				partial.refreshTokenExpire = nextValue as number | undefined;
-				break;
-			case "idToken":
-				partial.idToken = nextValue as string | undefined;
 				break;
 			case "loginInProgress":
 				partial.loginInProgress = Boolean(nextValue);
@@ -714,23 +463,9 @@ export class Auth<
 				return;
 		}
 		this.#setState(partial, { persist: false });
-		if (key === "token") {
-			this.#ensureUserInfoIfEnabled();
-		}
 	};
 
 	async #redirectToLogin(options?: LoginOptions): Promise<void> {
-		// PKCE requires WebCrypto and secure randomness.
-		// In some test environments (and in non-secure browser contexts), crypto may be missing or partial.
-		const cryptoObj = globalThis.crypto as Crypto | undefined;
-		const hasSubtleDigest = typeof cryptoObj?.subtle?.digest === "function";
-		const hasGetRandomValues = typeof cryptoObj?.getRandomValues === "function";
-		if (!hasSubtleDigest || !hasGetRandomValues) {
-			throw new Error(
-				"The context/environment is not secure, and does not support the 'crypto.subtle' module. See: https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle for details",
-			);
-		}
-
 		const navigationMethod =
 			options?.method === "replace" ? "replace" : "assign";
 
@@ -756,11 +491,9 @@ export class Auth<
 		if (this.#config.scope !== undefined && !params.has("scope")) {
 			params.append("scope", this.#config.scope);
 		}
-		this.#storage.removeItem(stateStorageKey);
 		this.#storage.removeItem(this.#config.storageKeyPrefix + urlHashStorageKey);
 		const state = options?.state ?? this.#config.state;
 		if (state) {
-			this.#storage.setItem(stateStorageKey, state);
 			params.append("state", state);
 		}
 		if (window.location.hash) {

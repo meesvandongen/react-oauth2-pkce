@@ -6,32 +6,11 @@ function stringIsUnset(value: string | null | undefined) {
 }
 
 export function createInternalConfig<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
 	AccessTokenData extends import("./types").TokenData,
-	IdTokenData extends import("./types").TokenData,
-	UserInfoData extends import("./types").UserInfo,
->(
-	passedConfig: AuthConfig<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
-): InternalConfig<
-	HasUserInfo,
-	HasOidc,
-	AccessTokenData,
-	IdTokenData,
-	UserInfoData
-> {
+>(passedConfig: AuthConfig<AccessTokenData>): InternalConfig {
 	const config = {
 		autoLogin: true,
 		clearURL: true,
-		oidc: false,
-		userInfo: false,
-		userInfoRequestCredentials: "same-origin",
 		scope: undefined,
 		loginMethod: "redirect",
 		storage: "local",
@@ -40,32 +19,12 @@ export function createInternalConfig<
 		refreshTokenExpiryStrategy: "renewable",
 		tokenRequestCredentials: "same-origin",
 		...passedConfig,
-	} as InternalConfig<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>;
+	} as InternalConfig;
 	validateConfig(config);
 	return config;
 }
 
-export function validateConfig<
-	HasUserInfo extends boolean,
-	HasOidc extends boolean,
-	AccessTokenData extends import("./types").TokenData,
-	IdTokenData extends import("./types").TokenData,
-	UserInfoData extends import("./types").UserInfo,
->(
-	config: InternalConfig<
-		HasUserInfo,
-		HasOidc,
-		AccessTokenData,
-		IdTokenData,
-		UserInfoData
-	>,
-) {
+export function validateConfig(config: InternalConfig) {
 	if (stringIsUnset(config?.clientId)) {
 		throw Error("'clientId' must be set");
 	}
@@ -77,8 +36,5 @@ export function validateConfig<
 	}
 	if (stringIsUnset(config?.redirectUri)) {
 		throw Error("'redirectUri' must be set");
-	}
-	if (config.userInfo && stringIsUnset(config?.userInfoEndpoint)) {
-		throw Error("'userInfoEndpoint' must be set when 'userInfo' is true");
 	}
 }

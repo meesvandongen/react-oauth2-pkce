@@ -5,7 +5,6 @@ import { expectAuthError, expectNotAuthenticated, login } from "./helpers";
 test("shows error and stays unauthenticated for invalid authorization code", async ({
 	page,
 	network,
-	oidc,
 }) => {
 	network.use(
 		http.get("**/auth", async ({ request }) => {

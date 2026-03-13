@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { calculatePKCECodeChallenge } from "openid-client";
+import { calculatePKCECodeChallenge } from "oauth4webapi";
 
 export interface AuthorizationRequestContext {
 	clientId: string;
@@ -52,7 +52,6 @@ export interface TokenEndpointSuccess {
 	token_type: "Bearer";
 	expires_in: number;
 	scope: string;
-	id_token: string;
 	refresh_token?: string;
 	refresh_expires_in?: number;
 }
@@ -77,7 +76,7 @@ export class OAuthError extends Error {
 
 const DEFAULT_LOGIN_HINT = "admin@example.com";
 
-export class MockOidcProvider {
+export class MockOAuthProvider {
 	readonly #authorizationCodes = new Map<string, AuthorizationGrant>();
 	readonly #refreshGrants = new Map<string, RefreshGrant>();
 
@@ -95,47 +94,15 @@ export class MockOidcProvider {
 	constructor(options: ProviderOptions = {}) {
 		this.issuer = options.issuer ?? "http://localhost:5556/idp";
 		this.accessTokenLifetimeSeconds =
-			options.accessTokenLifetimeSeconds ?? 60 * 10; // 10 minutes
+			options.accessTokenLifetimeSeconds ?? 60 * 10;
 		this.refreshTokenLifetimeSeconds =
-			options.refreshTokenLifetimeSeconds ?? 60 * 60; // 1 hour
+			options.refreshTokenLifetimeSeconds ?? 60 * 60;
 		this.adjustTokenPayload =
 			options.adjustTokenPayload ??
 			(async ({ authContext, tokenParams }) => ({
 				authParameters: authContext.parameters,
 				tokenParams,
 			}));
-	}
-
-	public getMetadata() {
-		const base = this.issuer;
-		return {
-			issuer: base,
-			authorization_endpoint: `${base}/auth`,
-			token_endpoint: `${base}/token`,
-			userinfo_endpoint: `${base}/userinfo`,
-			end_session_endpoint: `${base}/logout`,
-			revocation_endpoint: `${base}/revoke`,
-			jwks_uri: `${base}/keys`,
-			response_types_supported: ["code"],
-			grant_types_supported: ["authorization_code", "refresh_token"],
-			code_challenge_methods_supported: ["S256", "plain"],
-			id_token_signing_alg_values_supported: ["HS256"],
-			token_endpoint_auth_methods_supported: [
-				"client_secret_post",
-				"client_secret_basic",
-			],
-			claims_supported: [
-				"aud",
-				"exp",
-				"iat",
-				"iss",
-				"sub",
-				"email",
-				"email_verified",
-				"name",
-				"preferred_username",
-			],
-		};
 	}
 
 	public authorize(request: Request) {
@@ -174,7 +141,7 @@ export class MockOidcProvider {
 		const grant: AuthorizationRequestContext = {
 			clientId,
 			redirectUri,
-			scope: params.get("scope") ?? "openid profile email",
+			scope: params.get("scope") ?? "api:read",
 			codeChallenge: params.get("code_challenge") ?? undefined,
 			codeChallengeMethod: (params.get("code_challenge_method") ?? "plain") as
 				| "S256"
@@ -220,38 +187,21 @@ export class MockOidcProvider {
 		);
 	}
 
-	public createLogoutRedirect(url: URL) {
-		const postLogout = url.searchParams.get("post_logout_redirect_uri");
-		if (!postLogout) {
+	public createLogoutRedirect(request: Request) {
+		const target = request.referrer || request.headers.get("referer");
+		if (!target) {
 			return {
-				redirect: `${this.issuer}/logged-out`,
-				hasRedirect: false,
+				redirect: "http://localhost:3010/configurable",
+				hasRedirect: true,
 			};
 		}
 
-		const redirect = new URL(postLogout);
-		const state = url.searchParams.get("state");
-		if (state) {
-			redirect.searchParams.set("state", state);
-		}
+		const redirect = new URL(target);
+		redirect.search = "";
 
 		return {
 			redirect: redirect.toString(),
 			hasRedirect: true,
-		};
-	}
-
-	public getJwks() {
-		return {
-			keys: [
-				{
-					kty: "oct",
-					kid: "mock-key",
-					alg: "HS256",
-					k: Buffer.from("mock-secret").toString("base64"),
-					use: "sig",
-				},
-			],
 		};
 	}
 
@@ -434,13 +384,7 @@ export class MockOidcProvider {
 			Object.assign(accessPayload, extra);
 		}
 
-		const idTokenPayload = {
-			...accessPayload,
-			nonce: randomBytes(8).toString("hex"),
-		};
-
 		const access_token = this.createJwt(accessPayload);
-		const id_token = this.createJwt(idTokenPayload);
 
 		let refresh_token: string | undefined;
 		if (scope.includes("offline_access")) {
@@ -458,7 +402,6 @@ export class MockOidcProvider {
 			access_token,
 			token_type: "Bearer",
 			expires_in: this.accessTokenLifetimeSeconds,
-			id_token,
 			scope,
 		};
 

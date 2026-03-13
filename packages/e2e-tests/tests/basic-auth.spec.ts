@@ -29,12 +29,6 @@ test("has tokens after login", async ({ page }) => {
 		page.getByTestId("token-data"),
 		"displays decoded token data",
 	).toBeVisible();
-
-	await expect(page.getByTestId("id-token"), "displays ID token").toBeVisible();
-	await expect(
-		page.getByTestId("id-token-data"),
-		"displays decoded ID token data",
-	).toBeVisible();
 });
 
 test("clears URL parameters after login", async ({ page }) => {

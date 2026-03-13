@@ -1,7 +1,6 @@
 import { postWithXForm } from "./httpUtils";
 import type {
 	InternalConfig,
-	PrimitiveRecord,
 	TokenRequest,
 	TokenRequestForRefresh,
 	TokenRequestWithCodeAndVerifier,
@@ -9,7 +8,6 @@ import type {
 } from "./types";
 
 export const codeVerifierStorageKey = "PKCE_code_verifier";
-export const stateStorageKey = "ROCP_auth_state";
 export const urlHashStorageKey = "url_hash";
 
 // This is called a "type predicate". Which allow us to know which kind of response we got, in a type safe way.
@@ -98,50 +96,11 @@ export const fetchWithRefreshToken = (props: {
 
 export function redirectToLogout(
 	config: InternalConfig,
-	token: string,
-	refresh_token?: string,
-	idToken?: string,
-	state?: string,
-	logoutHint?: string,
-	additionalParameters?: PrimitiveRecord,
+	_token: string,
+	_refreshToken?: string,
 ) {
-	const params = new URLSearchParams({
-		token: refresh_token || token,
-		token_type_hint: refresh_token ? "refresh_token" : "access_token",
-		client_id: config.clientId,
-		post_logout_redirect_uri: config.logoutRedirect ?? config.redirectUri,
-		ui_locales: window.navigator.languages.join(" "),
-		...config.extraLogoutParameters,
-		...additionalParameters,
-	});
-	if (idToken) {
-		params.append("id_token_hint", idToken);
+	if (!config.logoutEndpoint) {
+		return;
 	}
-	if (state) {
-		params.append("state", state);
-	}
-	if (logoutHint) {
-		params.append("logout_hint", logoutHint);
-	}
-	window.location.assign(`${config.logoutEndpoint}?${params.toString()}`);
-}
-
-export function validateState(
-	urlParams: URLSearchParams,
-	storageType: InternalConfig["storage"],
-) {
-	const storage = storageType === "session" ? sessionStorage : localStorage;
-	const receivedState = urlParams.get("state");
-	const loadedState = storage.getItem(stateStorageKey);
-
-	// Normalize empty/null states for comparison
-	// OAuth servers may return state="" when no state was sent, while storage returns null
-	const normalizedReceivedState = receivedState || null;
-	const normalizedLoadedState = loadedState || null;
-
-	if (normalizedReceivedState !== normalizedLoadedState) {
-		throw new Error(
-			'"state" value received from authentication server does no match client request. Possible cross-site request forgery',
-		);
-	}
+	window.location.assign(config.logoutEndpoint);
 }

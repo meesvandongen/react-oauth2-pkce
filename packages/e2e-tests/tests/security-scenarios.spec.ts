@@ -1,27 +1,11 @@
-import { HttpResponse, http } from "msw";
 import { expect, test } from "../playwright.setup";
 import {
-	expectAuthError,
 	expectAuthenticated,
 	expectNoAuthError,
 	expectNotAuthenticated,
 	login,
 	logout,
 } from "./helpers";
-
-test("rejects mismatched state parameter", async ({ page, network, oidc }) => {
-	network.use(
-		http.get("**/auth", async ({ request }) => {
-			const redirectUri = new URL(oidc.authorize(request));
-			redirectUri.searchParams.set("state", "wrong-state");
-			return HttpResponse.redirect(redirectUri, 302);
-		}),
-	);
-	await page.goto("/configurable");
-	await page.getByTestId("login-custom-state-button").click();
-	await expectAuthError(page);
-	await expectNotAuthenticated(page);
-});
 
 test("ignores code without active login flow", async ({ page }) => {
 	await page.goto("/configurable?code=injected&state=injected");

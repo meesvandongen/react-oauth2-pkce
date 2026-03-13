@@ -1,21 +1,21 @@
 import { NetworkFixture } from "@mvd/playwright-msw";
 import { test as base, Page } from "@playwright/test";
-import { createOidcHandlers } from "./msw/handlers";
-import { MockOidcProvider } from "./msw/mockOidcProvider";
+import { createOAuthHandlers } from "./msw/handlers";
+import { MockOAuthProvider } from "./msw/mockOAuthProvider";
 
 type Fixtures = {
-	oidc: MockOidcProvider;
+	oauth: MockOAuthProvider;
 	network: NetworkFixture;
 };
 
 export const test = base.extend<Fixtures>({
-	oidc: async ({}, use) => {
-		const provider = new MockOidcProvider();
+	oauth: async ({}, use) => {
+		const provider = new MockOAuthProvider();
 		await use(provider);
 	},
 	network: [
-		async ({ oidc, page, context, baseURL }, use) => {
-			const handlers = createOidcHandlers(oidc);
+		async ({ oauth, page, context, baseURL }, use) => {
+			const handlers = createOAuthHandlers(oauth);
 			const networkFixture = new NetworkFixture({
 				initialHandlers: handlers,
 				context,
