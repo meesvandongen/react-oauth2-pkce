@@ -1,6 +1,6 @@
 {
 	"name": "@mvd/auth",
-	"version": "1.23.2",
+	"version": "1.0.0",
 	"description": "Provider agnostic core utilities for OAuth2 Authorization Code flow with PKCE",
 	"exports": {
 		".": {
@@ -28,7 +28,7 @@
 		"@typescript/native-preview": "7.0.0-dev.20260214.1",
 		"happy-dom": "^20.6.1",
 		"react": "19.2.4",
-		"tsdown": "^0.20.3",
+		"tsdown": "^0.21.2",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.18"
 	},
