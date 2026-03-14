@@ -1,0 +1,66 @@
+---
+title: useAuth
+description: React hook that returns the full auth state discriminated union.
+---
+
+## useAuth(auth)
+
+```ts
+import { useAuth } from "@mvd/auth/react";
+```
+
+Returns the full auth state as a discriminated union. Subscribes to all state transitions.
+
+No React provider is needed — pass the `auth` instance directly.
+
+### Parameters
+
+| Parameter | Type            | Description         |
+| --------- | --------------- | ------------------- |
+| `auth`    | `Auth<T>`       | The auth instance created by `createAuth` |
+
+### Returns
+
+```ts
+type AuthSnapshot<AccessTokenData = TokenData> =
+  | {
+      status: "loading";
+      error: string | null;
+    }
+  | {
+      status: "unauthenticated";
+      error: string | null;
+    }
+  | {
+      status: "authenticated";
+      error: string | null;
+      token: string;
+      tokenData: AccessTokenData;
+    };
+```
+
+### Example
+
+```tsx
+function LoginGate() {
+  const snapshot = useAuth(auth);
+
+  if (snapshot.status === "loading") {
+    return <p>Logging in…</p>;
+  }
+
+  if (snapshot.status === "unauthenticated") {
+    return <button onClick={() => auth.login()}>Log in</button>;
+  }
+
+  // snapshot.status === "authenticated"
+  return <Dashboard token={snapshot.token} />;
+}
+```
+
+### Notes
+
+- `"loading"` means a login redirect is in progress (the `?code=` callback is being exchanged).
+- `"unauthenticated"` means no valid token exists and no login is in progress.
+- `"authenticated"` means a valid token is available. `token` is the raw access token string and `tokenData` is the decoded JWT payload.
+- `error` is non-null when the last operation produced an error; the `status` field still reflects the current auth state.

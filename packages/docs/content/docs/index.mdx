@@ -1,0 +1,36 @@
+---
+title: Introduction
+description: Provider-agnostic OAuth 2.0 Authorization Code Flow with PKCE for browser apps.
+---
+
+# @mvd/auth
+
+`@mvd/auth` is a provider-agnostic OAuth 2.0 Authorization Code Flow with PKCE library for browser apps, with React hooks available from `@mvd/auth/react`.
+
+## What this library does
+
+- Starts the OAuth authorization code flow with PKCE
+- Exchanges the authorization code for tokens
+- Persists auth state in `localStorage` or `sessionStorage`
+- Refreshes access tokens in the background when a refresh token is available
+- Exposes small React hooks for auth state
+- Decodes JWT access tokens into `tokenData`
+
+## Scope
+
+This package is intentionally focused on **OAuth PKCE only**.
+
+It does **not** include OpenID Connect features such as:
+
+- `id_token`
+- UserInfo endpoint fetching
+- OIDC discovery metadata handling
+
+If your provider issues JWT access tokens, the decoded payload is available as `tokenData`.
+If your provider issues opaque access tokens, this package is not a fit in its current form.
+
+## Next steps
+
+- [Install the package](/docs/installation)
+- [Quick start guide](/docs/quick-start)
+- [Configuration reference](/docs/configuration)

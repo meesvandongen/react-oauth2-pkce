@@ -126,6 +126,48 @@ const authenticated = useAuthRequired(auth);
 authenticated.tokenData.name;
 ```
 
+### `auth.login(options?)`
+
+Starts the authorization code flow. Options:
+
+```ts
+type LoginOptions = {
+	state?: string;
+	additionalParameters?: Record<string, string | boolean | number>;
+	method?: "redirect" | "replace" | "popup";
+};
+```
+
+### `auth.logout()`
+
+Clears local auth state. If `logoutEndpoint` is configured, navigates the browser to that URL.
+
+### Events
+
+The `auth` instance is a typed event target. Listen for events:
+
+```ts
+auth.addEventListener("post-login", (e) => {
+	console.log("Logged in, token response:", e.detail);
+});
+
+auth.addEventListener("refresh-token-expired", (e) => {
+	e.detail.login(); // re-prompt the user
+});
+
+auth.addEventListener("error", (e) => {
+	console.error(e.detail);
+});
+```
+
+| Event                   | Payload                    | Description                                 |
+| ----------------------- | -------------------------- | ------------------------------------------- |
+| `pre-login`             | —                          | Before navigating to the authorization page |
+| `post-login`            | `TokenResponse`            | After a successful token exchange           |
+| `refresh-token-expired` | `RefreshTokenExpiredEvent` | When the refresh token can no longer be used |
+| `error`                 | `Error`                    | On unrecoverable errors                     |
+| `state-change`          | `AuthSnapshot`             | On every auth state transition              |
+
 ### Configuration
 
 `createAuth(config)` accepts:
@@ -197,6 +239,7 @@ Common causes:
 1. Update the test app config in `packages/test-app/src/pages/ConfigurableAuth.tsx`.
 2. Install dependencies with `pnpm install`.
 3. Run the demo app with `pnpm --filter test-app start`.
+4. Run the docs site with `pnpm --filter @mvd/docs start`.
 
 ## Contribute
 

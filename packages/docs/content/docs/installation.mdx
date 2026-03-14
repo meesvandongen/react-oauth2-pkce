@@ -1,0 +1,39 @@
+---
+title: Installation
+description: How to install @mvd/auth in your project.
+---
+
+## Install
+
+```bash
+npm install @mvd/auth
+```
+
+```bash
+pnpm add @mvd/auth
+```
+
+```bash
+yarn add @mvd/auth
+```
+
+## Peer dependencies
+
+`react` is a peer dependency when using the React hooks from `@mvd/auth/react`. It is optional — the core `createAuth` function works without React.
+
+```json
+{
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  }
+}
+```
+
+## Imports
+
+The package exports two entry points:
+
+| Entry point      | Contents                                  |
+| ---------------- | ----------------------------------------- |
+| `@mvd/auth`      | `createAuth`, types, `FetchError`         |
+| `@mvd/auth/react`| `useAuth`, `useAuthRequired`              |

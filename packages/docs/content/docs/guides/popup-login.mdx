@@ -1,0 +1,44 @@
+---
+title: Popup Login
+description: Open the authorization endpoint in a popup window.
+---
+
+## Popup login
+
+Pass `method: "popup"` to `auth.login()` to open the authorization endpoint in a popup window instead of navigating the current page.
+
+```tsx
+<button onClick={() => auth.login({ method: "popup" })}>
+  Log in with popup
+</button>
+```
+
+The popup completes the authorization code exchange and then closes itself. The parent window receives the token via the shared storage event.
+
+### Make popup the default
+
+Set `loginMethod: "popup"` in `createAuth` to use popup login for all `auth.login()` calls that do not specify a method:
+
+```ts
+const auth = createAuth({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+  loginMethod: "popup",
+});
+```
+
+### Popup blockers
+
+If the browser's popup blocker prevents the popup from opening, the library falls back to a redirect-based login automatically and logs a console warning:
+
+```
+Popup blocked. Redirecting to login page.
+Disable popup blocker to use popup login.
+```
+
+### Notes
+
+- The `redirectUri` must still be registered with your OAuth provider and must point to a page that loads your app (so the token exchange can run in the popup).
+- `autoLogin: true` with `loginMethod: "popup"` will open a popup on page load, which most browsers will block. Prefer `autoLogin: false` when using popup login.

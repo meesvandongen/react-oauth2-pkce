@@ -1,0 +1,83 @@
+---
+title: Configuration
+description: All configuration options for createAuth.
+---
+
+## createAuth(config)
+
+`createAuth` accepts an `AuthConfig` object. Only `clientId`, `authorizationEndpoint`, `tokenEndpoint`, and `redirectUri` are required.
+
+### Required options
+
+| Option                   | Type     | Description                                        |
+| ------------------------ | -------- | -------------------------------------------------- |
+| `clientId`               | `string` | OAuth 2.0 client ID                                |
+| `authorizationEndpoint`  | `string` | URL of the authorization endpoint                  |
+| `tokenEndpoint`          | `string` | URL of the token endpoint                          |
+| `redirectUri`            | `string` | Redirect URI registered with your OAuth provider   |
+
+### Optional options
+
+| Option                        | Type                                | Default         | Description |
+| ----------------------------- | ----------------------------------- | --------------- | ----------- |
+| `scope`                       | `string`                            | —               | Space-separated list of scopes to request |
+| `state`                       | `string`                            | —               | App-defined round-trip value forwarded to the authorization request. Not used as a security mechanism — PKCE is the protection. |
+| `logoutEndpoint`              | `string`                            | —               | URL to navigate to on logout. Provider-specific. |
+| `loginMethod`                 | `"redirect" \| "replace" \| "popup"` | `"redirect"`   | How to navigate to the authorization endpoint |
+| `autoLogin`                   | `boolean`                           | `true`          | Automatically redirect to login if no token is found on startup |
+| `clearURL`                    | `boolean`                           | `true`          | Remove the `?code=` query parameter from the URL after a successful token exchange |
+| `extraAuthParameters`         | `Record<string, string\|boolean\|number>` | —         | Additional query parameters appended to the authorization URL |
+| `extraTokenParameters`        | `Record<string, string\|boolean\|number>` | —         | Additional parameters appended to the token request body |
+| `tokenExpiresIn`              | `number`                            | —               | Override `expires_in` from the token response (seconds) |
+| `refreshTokenExpiresIn`       | `number`                            | —               | Override the refresh token expiry (seconds) |
+| `refreshTokenExpiryStrategy`  | `"renewable" \| "absolute"`         | `"renewable"`   | `"renewable"` resets the refresh token timer on each refresh; `"absolute"` keeps the original expiry |
+| `storage`                     | `"local" \| "session"`              | `"local"`       | Where to persist auth state |
+| `storageKeyPrefix`            | `string`                            | `"ROCP_"`       | Prefix for storage keys, useful when running multiple auth instances |
+| `refreshWithScope`            | `boolean`                           | `true`          | Include the original scope in refresh token requests |
+| `tokenRequestCredentials`     | `"same-origin" \| "include" \| "omit"` | `"same-origin"` | `credentials` option for the token endpoint `fetch` call |
+
+## Example
+
+```ts
+const auth = createAuth({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+  scope: "api:read offline_access",
+  autoLogin: false,
+  storage: "session",
+  tokenExpiresIn: 3600,
+  refreshTokenExpiresIn: 86400,
+  refreshTokenExpiryStrategy: "absolute",
+  loginMethod: "redirect",
+  clearURL: true,
+  storageKeyPrefix: "myapp_",
+});
+```
+
+## TypeScript: typed access-token payloads
+
+Pass a type parameter to `createAuth` to type the decoded access-token payload:
+
+```ts
+type AccessClaims = {
+  sub: string;
+  name: string;
+  scope: string;
+};
+
+const auth = createAuth<AccessClaims>({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+});
+```
+
+The type flows through to `useAuth` and `useAuthRequired`:
+
+```ts
+const authenticated = useAuthRequired(auth);
+authenticated.tokenData.name; // typed as string
+```

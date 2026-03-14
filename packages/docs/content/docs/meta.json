@@ -1,0 +1,14 @@
+{
+	"title": "@mvd/auth",
+	"pages": [
+		"index",
+		"installation",
+		"quick-start",
+		"configuration",
+		"---API Reference---",
+		"api",
+		"---Guides---",
+		"guides",
+		"troubleshooting"
+	]
+}

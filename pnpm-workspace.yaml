@@ -1,5 +1,6 @@
 packages:
   - packages/auth
+  - packages/docs
   - packages/e2e-tests
   - packages/test-app
 

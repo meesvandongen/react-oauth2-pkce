@@ -1,0 +1,60 @@
+---
+title: createAuth
+description: Creates and returns an Auth instance.
+---
+
+## createAuth(config)
+
+```ts
+import { createAuth } from "@mvd/auth";
+```
+
+Creates and returns an `Auth` instance. Accepts an [`AuthConfig`](/docs/configuration) object.
+
+```ts
+const auth = createAuth({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+});
+```
+
+### Returns
+
+An `Auth<AccessTokenData>` instance with the following public surface:
+
+| Member          | Type                                   | Description                          |
+| --------------- | -------------------------------------- | ------------------------------------ |
+| `login(options?)` | `(options?: LoginOptions) => void`  | Start the authorization flow         |
+| `logout()`      | `() => void`                           | Clear auth state and optionally redirect to `logoutEndpoint` |
+| `subscribe`     | `(callback: () => void) => () => void` | Subscribe to state changes (React-compatible) |
+| `getSnapshot`   | `() => AuthSnapshot`                   | Return the current auth snapshot     |
+
+The `Auth` class also extends `TypedEventTarget` and emits the following events:
+
+| Event                    | Payload                    | Description                                        |
+| ------------------------ | -------------------------- | -------------------------------------------------- |
+| `pre-login`              | —                          | Fired before navigating to the authorization endpoint |
+| `post-login`             | `TokenResponse`            | Fired after a successful token exchange            |
+| `refresh-token-expired`  | `RefreshTokenExpiredEvent` | Fired when the refresh token has expired           |
+| `error`                  | `Error`                    | Fired on unrecoverable errors                      |
+| `state-change`           | `AuthSnapshot`             | Fired on every state transition                    |
+
+### LoginOptions
+
+```ts
+type LoginOptions = {
+  state?: string;
+  additionalParameters?: Record<string, string | boolean | number>;
+  method?: "redirect" | "replace" | "popup";
+};
+```
+
+### TypeScript generic
+
+```ts
+const auth = createAuth<MyTokenPayload>({ ... });
+```
+
+The type parameter types `tokenData` in `useAuth` and `useAuthRequired`.

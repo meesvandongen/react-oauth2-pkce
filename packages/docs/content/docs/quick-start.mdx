@@ -1,0 +1,68 @@
+---
+title: Quick Start
+description: Get up and running with @mvd/auth in minutes.
+---
+
+## Create an auth instance
+
+Create an `auth` instance once (typically in a module-level file) by calling `createAuth` with your OAuth provider configuration:
+
+```tsx
+import { createAuth } from "@mvd/auth";
+
+const auth = createAuth({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+  scope: "api:read offline_access",
+  autoLogin: false,
+});
+```
+
+## Use the auth hooks
+
+Import the hooks from `@mvd/auth/react`. No React provider is needed — just pass the `auth` instance to each hook.
+
+```tsx
+import { useAuth, useAuthRequired } from "@mvd/auth/react";
+
+function LoginGate() {
+  const snapshot = useAuth(auth);
+
+  if (snapshot.status === "loading") return <p>Logging in…</p>;
+  if (snapshot.status === "unauthenticated") {
+    return <button onClick={() => auth.login()}>Log in</button>;
+  }
+
+  return <AuthenticatedPanel />;
+}
+```
+
+## Access the token
+
+Use `useAuthRequired` inside a component that is only rendered when the user is authenticated. It throws if auth is in any other state, so guard it with `useAuth` first.
+
+```tsx
+function AuthenticatedPanel() {
+  const authenticated = useAuthRequired(auth);
+
+  return (
+    <>
+      <h4>Access token</h4>
+      <pre>{authenticated.token}</pre>
+
+      <h4>Decoded JWT payload</h4>
+      <pre>{JSON.stringify(authenticated.tokenData, null, 2)}</pre>
+    </>
+  );
+}
+```
+
+## Log out
+
+```tsx
+<button onClick={() => auth.logout()}>Log out</button>
+```
+
+`logout()` clears the local auth state. If `logoutEndpoint` is configured, it also navigates the browser to that URL.

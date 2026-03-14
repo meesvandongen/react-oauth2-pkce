@@ -1,0 +1,66 @@
+---
+title: Troubleshooting
+description: Common issues and how to fix them.
+---
+
+## Sessions expire too quickly
+
+This happens when the refresh token can no longer be used to obtain a new access token.
+
+If your provider omits `expires_in`, `refresh_expires_in`, or `refresh_token_expires_in` from the token response, the library falls back to a short default expiry. Override them explicitly:
+
+```ts
+const auth = createAuth({
+  // ...
+  tokenExpiresIn: 3600,          // 1 hour
+  refreshTokenExpiresIn: 86400,  // 24 hours
+});
+```
+
+## Next.js / SSR builds fail
+
+`createAuth()` and the hooks are client-side only because they depend on browser APIs like `window`, `crypto`, and Web Storage.
+
+Mark auth-consuming modules with `"use client"` and, if needed, load them client-only. See the [Next.js guide](/docs/guides/next-js) for details.
+
+## Login redirect gets stuck or comes back without a token
+
+This usually means the redirect callback was interrupted or the provider returned without a usable `code` parameter.
+
+Check:
+1. The `redirectUri` registered with your OAuth provider matches `auth.redirectUri` exactly (including trailing slashes).
+2. The page at `redirectUri` loads your app fully so the token exchange can run.
+3. The provider is not returning `error` in the query string — check `snapshot.error`.
+
+## No token request happens after redirect
+
+Common causes:
+
+- App bootstrapping does not run on the callback route (e.g. the route is excluded from your app).
+- Another library or middleware intercepts `fetch()` during auth initialization.
+- The `?code=` parameter was stripped by a router before the library could read it.
+
+## Popup login opens but the parent window doesn't update
+
+The parent window receives the token via the `storage` event. Make sure:
+
+- Both windows share the same origin.
+- The `storage` key prefix is the same in both (it always is when using the same `auth` instance).
+- The popup window's page loads the same `auth` instance (i.e. it runs the token exchange code).
+
+## "Expected authenticated auth state, got 'loading'"
+
+This error comes from `useAuthRequired` when called outside an authenticated context. Wrap it with a guard using `useAuth` first:
+
+```tsx
+const snapshot = useAuth(auth);
+if (snapshot.status !== "authenticated") return null;
+
+// Now safe to call useAuthRequired
+```
+
+## Token isn't being refreshed
+
+Ensure your provider returns a `refresh_token` in the token response. Without a refresh token, the library cannot renew access.
+
+If the provider returns a short-lived access token and no refresh token, set `autoLogin: true` so the user is redirected back to login when the token expires.

@@ -1,0 +1,75 @@
+---
+title: Next.js / SSR
+description: Using @mvd/auth in Next.js applications.
+---
+
+## Server-side rendering
+
+`createAuth()` and the React hooks rely on browser APIs: `window`, `crypto`, and Web Storage. They cannot run on the server.
+
+### Mark auth modules with `"use client"`
+
+Any file that calls `createAuth` or uses `useAuth` / `useAuthRequired` must be a Client Component:
+
+```tsx
+"use client";
+
+import { createAuth } from "@mvd/auth";
+
+export const auth = createAuth({
+  clientId: process.env.NEXT_PUBLIC_CLIENT_ID!,
+  authorizationEndpoint: process.env.NEXT_PUBLIC_AUTH_ENDPOINT!,
+  tokenEndpoint: process.env.NEXT_PUBLIC_TOKEN_ENDPOINT!,
+  redirectUri: typeof window !== "undefined" ? window.location.origin : "",
+});
+```
+
+### Auth gate component
+
+Wrap authenticated areas with a client-only gate:
+
+```tsx
+"use client";
+
+import { useAuth } from "@mvd/auth/react";
+import { auth } from "@/lib/auth";
+
+export function AuthGate({ children }: { children: React.ReactNode }) {
+  const snapshot = useAuth(auth);
+
+  if (snapshot.status === "loading") {
+    return <p>Authenticating…</p>;
+  }
+
+  if (snapshot.status === "unauthenticated") {
+    return <button onClick={() => auth.login()}>Log in</button>;
+  }
+
+  return <>{children}</>;
+}
+```
+
+Use it in a Server Component layout:
+
+```tsx
+// app/dashboard/layout.tsx
+import { AuthGate } from "@/components/AuthGate";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <AuthGate>{children}</AuthGate>;
+}
+```
+
+### Environment variables
+
+Use `NEXT_PUBLIC_` prefixed variables for client-side OAuth config:
+
+```bash
+NEXT_PUBLIC_CLIENT_ID=my-client-id
+NEXT_PUBLIC_AUTH_ENDPOINT=https://auth.example.com/authorize
+NEXT_PUBLIC_TOKEN_ENDPOINT=https://auth.example.com/token
+```

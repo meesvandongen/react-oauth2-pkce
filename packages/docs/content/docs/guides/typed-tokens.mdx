@@ -1,0 +1,42 @@
+---
+title: Typed Token Payloads
+description: How to type the decoded access-token payload with TypeScript.
+---
+
+## Typed access-token payloads
+
+By default, `tokenData` is typed as `{ [x: string]: any }`. Pass a type parameter to `createAuth` to narrow it to your specific claims:
+
+```ts
+type AccessClaims = {
+  sub: string;
+  name: string;
+  email: string;
+  scope: string;
+  exp: number;
+};
+
+const auth = createAuth<AccessClaims>({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+});
+```
+
+The type flows through to `useAuth` and `useAuthRequired`:
+
+```tsx
+function Profile() {
+  const { tokenData } = useAuthRequired(auth);
+
+  // tokenData is typed as AccessClaims
+  return <p>Hello, {tokenData.name}</p>;
+}
+```
+
+### Notes
+
+- `createAuth` does not validate the token payload against the type at runtime. The type is purely a TypeScript convenience.
+- Standard JWT claims like `sub`, `exp`, `iat`, and `iss` are not automatically included — add them to your type if you need them.
+- If your access token is opaque (not a JWT), `tokenData` will be an empty object `{}`.

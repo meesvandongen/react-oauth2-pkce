@@ -1,0 +1,4 @@
+{
+	"title": "API Reference",
+	"pages": ["create-auth", "use-auth", "use-auth-required"]
+}

@@ -1,0 +1,46 @@
+---
+title: Multiple Providers
+description: Using multiple OAuth providers or instances in one app.
+---
+
+## Multiple providers
+
+Each call to `createAuth` creates an independent auth instance with its own storage keys. You can have multiple instances in a single app.
+
+```ts
+export const workAuth = createAuth({
+  clientId: "work-client-id",
+  authorizationEndpoint: "https://work.example.com/authorize",
+  tokenEndpoint: "https://work.example.com/token",
+  redirectUri: window.location.origin,
+  storageKeyPrefix: "work_",
+});
+
+export const personalAuth = createAuth({
+  clientId: "personal-client-id",
+  authorizationEndpoint: "https://personal.example.com/authorize",
+  tokenEndpoint: "https://personal.example.com/token",
+  redirectUri: window.location.origin,
+  storageKeyPrefix: "personal_",
+});
+```
+
+### Storage key isolation
+
+Each instance uses `storageKeyPrefix` to namespace its storage keys. The default prefix is `"ROCP_"`. When running multiple instances, set distinct prefixes to prevent collisions.
+
+### Using both instances in React
+
+```tsx
+function App() {
+  const work = useAuth(workAuth);
+  const personal = useAuth(personalAuth);
+
+  return (
+    <div>
+      <p>Work: {work.status}</p>
+      <p>Personal: {personal.status}</p>
+    </div>
+  );
+}
+```

@@ -1,0 +1,66 @@
+---
+title: useAuthRequired
+description: React hook that returns only the authenticated snapshot, throwing otherwise.
+---
+
+## useAuthRequired(auth)
+
+```ts
+import { useAuthRequired } from "@mvd/auth/react";
+```
+
+Returns only the authenticated branch of the `AuthSnapshot`. Throws if the user is not currently authenticated.
+
+Use this hook inside components that are only rendered when `useAuth` has already confirmed `status === "authenticated"`.
+
+### Parameters
+
+| Parameter | Type      | Description |
+| --------- | --------- | ----------- |
+| `auth`    | `Auth<T>` | The auth instance created by `createAuth` |
+
+### Returns
+
+```ts
+type AuthAuthenticatedSnapshot<AccessTokenData = TokenData> = {
+  status: "authenticated";
+  error: string | null;
+  token: string;
+  tokenData: AccessTokenData;
+};
+```
+
+### Example
+
+```tsx
+function LoginGate() {
+  const snapshot = useAuth(auth);
+
+  if (snapshot.status !== "authenticated") {
+    return <p>Not logged in</p>;
+  }
+
+  return <Dashboard />;
+}
+
+function Dashboard() {
+  // Safe to call here because LoginGate guards the render
+  const { token, tokenData } = useAuthRequired(auth);
+
+  return (
+    <div>
+      <p>Welcome, {tokenData.name}</p>
+      <pre>{token}</pre>
+    </div>
+  );
+}
+```
+
+### Throws
+
+```
+Error: Expected authenticated auth state, got 'loading'.
+  Guard this route/component first or use useAuth().
+```
+
+The error message includes the actual status that was observed.
