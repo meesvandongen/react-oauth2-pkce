@@ -49,5 +49,9 @@
 			"optional": true
 		}
 	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"private": false,
 	"sideEffects": false
 }

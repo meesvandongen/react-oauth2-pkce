@@ -65,7 +65,7 @@ export default function HomePage() {
 						Start in 5 minutes
 					</Link>
 					<Link
-						href="https://github.com/soofstad/react-oauth2-pkce"
+						href="https://github.com/meesvandongen/react-oauth2-pkce"
 						className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-medium transition hover:bg-fd-accent"
 					>
 						View repository

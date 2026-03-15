@@ -5,7 +5,7 @@ export const siteConfig = {
 	title: "@mvd/auth docs",
 	description:
 		"Browser-first OAuth 2.0 Authorization Code Flow with PKCE, plus optional React hooks.",
-	repositoryUrl: "https://github.com/soofstad/react-oauth2-pkce",
+	repositoryUrl: "https://github.com/meesvandongen/react-oauth2-pkce",
 	docsContentPath: "packages/docs/content/docs",
 };
 

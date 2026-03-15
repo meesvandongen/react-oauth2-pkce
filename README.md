@@ -1,7 +1,5 @@
 # @mvd/auth
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/soofstad/react-oauth2-pkce/blob/main/LICENSE) ![NPM Version](https://img.shields.io/npm/v/@mvd/auth?logo=npm&label=version) ![NPM Downloads](https://img.shields.io/npm/d18m/@mvd/auth?logo=npm) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@mvd/auth?label=size) ![CI](https://github.com/soofstad/react-oauth2-pkce/actions/workflows/tests.yaml/badge.svg)
-
 Provider-agnostic OAuth 2.0 Authorization Code Flow with PKCE for browser apps, with React hooks available from `@mvd/auth/react`.
 
 ## What this package does
