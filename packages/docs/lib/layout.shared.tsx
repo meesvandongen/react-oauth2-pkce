@@ -6,7 +6,7 @@ export const siteConfig = {
 	description:
 		"Browser-first OAuth 2.0 Authorization Code Flow with PKCE, plus optional React hooks.",
 	repositoryUrl: "https://github.com/soofstad/react-oauth2-pkce",
-	docsContentPath: "packages/docs2/content/docs",
+	docsContentPath: "packages/docs/content/docs",
 };
 
 export const gitConfig = {
