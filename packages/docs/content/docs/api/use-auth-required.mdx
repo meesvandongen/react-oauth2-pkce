@@ -1,6 +1,6 @@
 ---
 title: useAuthRequired
-description: React hook that returns only the authenticated snapshot, throwing otherwise.
+description: Read authenticated auth data in React when the screen should only render for signed-in users.
 ---
 
 ## useAuthRequired(auth)
@@ -9,28 +9,18 @@ description: React hook that returns only the authenticated snapshot, throwing o
 import { useAuthRequired } from "@mvd/auth/react";
 ```
 
-Returns only the authenticated branch of the `AuthSnapshot`. Throws if the user is not currently authenticated.
+Use `useAuthRequired` inside components that should only render after sign-in has already been confirmed.
 
-Use this hook inside components that are only rendered when `useAuth` has already confirmed `status === "authenticated"`.
+It returns the authenticated auth data directly, including `token` and `tokenData`.
 
-### Parameters
+## Best for
 
-| Parameter | Type      | Description |
-| --------- | --------- | ----------- |
-| `auth`    | `Auth<T>` | The auth instance created by `createAuth` |
+- account panels
+- protected dashboards
+- small UI sections that only make sense for signed-in users
+- components that rely on typed token claims
 
-### Returns
-
-```ts
-type AuthAuthenticatedSnapshot<AccessTokenData = TokenData> = {
-  status: "authenticated";
-  error: string | null;
-  token: string;
-  tokenData: AccessTokenData;
-};
-```
-
-### Example
+## Example
 
 ```tsx
 function LoginGate() {
@@ -44,23 +34,15 @@ function LoginGate() {
 }
 
 function Dashboard() {
-  // Safe to call here because LoginGate guards the render
-  const { token, tokenData } = useAuthRequired(auth);
+  const { tokenData } = useAuthRequired(auth);
 
-  return (
-    <div>
-      <p>Welcome, {tokenData.name}</p>
-      <pre>{token}</pre>
-    </div>
-  );
+  return <p>Welcome, {tokenData.name}</p>;
 }
 ```
 
-### Throws
+## Choose the right hook
 
-```
-Error: Expected authenticated auth state, got 'loading'.
-  Guard this route/component first or use useAuth().
-```
+- Use `useAuth` when the component needs to handle loading, signed-out, and signed-in states.
+- Use `useAuthRequired` when the component only makes sense after the user is already signed in.
 
-The error message includes the actual status that was observed.
+If you call this hook too early, it throws to tell you the screen still needs a guard.

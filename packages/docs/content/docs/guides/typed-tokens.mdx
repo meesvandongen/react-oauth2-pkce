@@ -1,11 +1,15 @@
 ---
 title: Typed Token Payloads
-description: How to type the decoded access-token payload with TypeScript.
+description: Make claim access easier to read and safer to use in TypeScript.
 ---
 
-## Typed access-token payloads
+## Why this guide helps
 
-By default, `tokenData` is typed as `{ [x: string]: any }`. Pass a type parameter to `createAuth` to narrow it to your specific claims:
+If your UI reads values from the access token—like a name, email address, role, or tenant—you can type those claims so your code stays easier to understand and harder to misuse.
+
+## Add the claims your UI actually uses
+
+Pass a type to `createAuth` that matches the token fields your app cares about.
 
 ```ts
 type AccessClaims = {
@@ -24,19 +28,26 @@ const auth = createAuth<AccessClaims>({
 });
 ```
 
-The type flows through to `useAuth` and `useAuthRequired`:
+## Use the typed claims in the places people see them
 
 ```tsx
 function Profile() {
   const { tokenData } = useAuthRequired(auth);
 
-  // tokenData is typed as AccessClaims
   return <p>Hello, {tokenData.name}</p>;
 }
 ```
 
-### Notes
+This is especially helpful when your UI depends on a few important claims and you want your editor to catch mistakes early.
 
-- `createAuth` does not validate the token payload against the type at runtime. The type is purely a TypeScript convenience.
-- Standard JWT claims like `sub`, `exp`, `iat`, and `iss` are not automatically included — add them to your type if you need them.
-- If your access token is opaque (not a JWT), `tokenData` will be an empty object `{}`.
+## Keep the type focused
+
+Only include the claims your product actually uses.
+
+That keeps the model simple, makes the UI easier to maintain, and avoids turning your auth setup into a dumping ground for every possible token field.
+
+## Important to know
+
+- Typed claims improve the developer experience in TypeScript.
+- They do not change the token returned by your provider.
+- This guide is most useful when your provider issues JWT access tokens with readable claims.

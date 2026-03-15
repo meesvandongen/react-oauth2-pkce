@@ -1,11 +1,21 @@
 ---
 title: Multiple Providers
-description: Using multiple OAuth providers or instances in one app.
+description: Support work, personal, or tenant-specific sign-in without mixing up sessions.
 ---
 
-## Multiple providers
+## When this guide helps
 
-Each call to `createAuth` creates an independent auth instance with its own storage keys. You can have multiple instances in a single app.
+Use multiple auth setups when one app needs to support more than one provider or more than one account context.
+
+Common examples include:
+
+- work and personal accounts
+- customer-specific identity providers
+- separate admin and end-user login paths
+
+## Give each setup a clear identity
+
+Create one auth instance per provider and give each one its own `storageKeyPrefix`.
 
 ```ts
 export const workAuth = createAuth({
@@ -25,11 +35,11 @@ export const personalAuth = createAuth({
 });
 ```
 
-### Storage key isolation
+That one choice prevents sessions from stepping on each other.
 
-Each instance uses `storageKeyPrefix` to namespace its storage keys. The default prefix is `"ROCP_"`. When running multiple instances, set distinct prefixes to prevent collisions.
+## Keep the UI obvious
 
-### Using both instances in React
+If people can sign in to more than one provider, label the choices clearly so they always know which account they are using.
 
 ```tsx
 function App() {
@@ -38,9 +48,18 @@ function App() {
 
   return (
     <div>
-      <p>Work: {work.status}</p>
-      <p>Personal: {personal.status}</p>
+      <p>Work account: {work.status}</p>
+      <p>Personal account: {personal.status}</p>
     </div>
   );
 }
 ```
+
+## Rules that prevent confusion
+
+- Use a different `storageKeyPrefix` for every auth setup.
+- Use separate labels in the UI so people know which login they are choosing.
+- Give each provider its own `redirectUri` when required.
+- Avoid triggering multiple login flows from one unclear action.
+
+When multiple-provider login works well, people always know where they are, which account they are using, and how to switch.

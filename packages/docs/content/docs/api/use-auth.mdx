@@ -1,6 +1,6 @@
 ---
 title: useAuth
-description: React hook that returns the full auth state discriminated union.
+description: Read the current auth state in React so your UI can show the right experience at every step.
 ---
 
 ## useAuth(auth)
@@ -9,58 +9,49 @@ description: React hook that returns the full auth state discriminated union.
 import { useAuth } from "@mvd/auth/react";
 ```
 
-Returns the full auth state as a discriminated union. Subscribes to all state transitions.
+Use `useAuth` when your component needs to decide what to show based on whether someone is signing in, signed out, or signed in.
 
-No React provider is needed — pass the `auth` instance directly.
+No provider wrapper is required—just pass the shared `auth` instance.
 
-### Parameters
+## What you receive
 
-| Parameter | Type            | Description         |
-| --------- | --------------- | ------------------- |
-| `auth`    | `Auth<T>`       | The auth instance created by `createAuth` |
+`useAuth` returns the current auth snapshot.
 
-### Returns
+| Status | What it means for the UI |
+| ------ | ------------------------ |
+| `"loading"` | sign-in is still finishing |
+| `"unauthenticated"` | the person is not signed in |
+| `"authenticated"` | a valid access token is available |
 
-```ts
-type AuthSnapshot<AccessTokenData = TokenData> =
-  | {
-      status: "loading";
-      error: string | null;
-    }
-  | {
-      status: "unauthenticated";
-      error: string | null;
-    }
-  | {
-      status: "authenticated";
-      error: string | null;
-      token: string;
-      tokenData: AccessTokenData;
-    };
-```
+When the status is `"authenticated"`, you also get `token` and `tokenData`.
 
-### Example
+## When to use it
+
+Choose `useAuth` for components that need to show different screens or actions based on auth state.
+
+Examples include:
+
+- login buttons
+- signed-out landing states
+- loading messages during sign-in
+- authenticated dashboards
+
+## Example
 
 ```tsx
 function LoginGate() {
   const snapshot = useAuth(auth);
 
   if (snapshot.status === "loading") {
-    return <p>Logging in…</p>;
+    return <p>Signing you in…</p>;
   }
 
   if (snapshot.status === "unauthenticated") {
     return <button onClick={() => auth.login()}>Log in</button>;
   }
 
-  // snapshot.status === "authenticated"
   return <Dashboard token={snapshot.token} />;
 }
 ```
 
-### Notes
-
-- `"loading"` means a login redirect is in progress (the `?code=` callback is being exchanged).
-- `"unauthenticated"` means no valid token exists and no login is in progress.
-- `"authenticated"` means a valid token is available. `token` is the raw access token string and `tokenData` is the decoded JWT payload.
-- `error` is non-null when the last operation produced an error; the `status` field still reflects the current auth state.
+If your component should only ever render after sign-in has already been confirmed, use [`useAuthRequired`](/docs/api/use-auth-required).

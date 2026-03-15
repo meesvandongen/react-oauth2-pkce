@@ -1,16 +1,16 @@
 ---
 title: Quick Start
-description: Get up and running with @mvd/auth in minutes.
+description: Set up sign-in, show the right UI, and give people a clean way to log out.
 ---
 
-## Create an auth instance
+## 1. Create one auth setup for your app
 
-Create an `auth` instance once (typically in a module-level file) by calling `createAuth` with your OAuth provider configuration:
+Start with a shared `auth` instance that points to your OAuth provider.
 
 ```tsx
 import { createAuth } from "@mvd/auth";
 
-const auth = createAuth({
+export const auth = createAuth({
   clientId: "my-client-id",
   authorizationEndpoint: "https://auth.example.com/authorize",
   tokenEndpoint: "https://auth.example.com/token",
@@ -20,17 +20,21 @@ const auth = createAuth({
 });
 ```
 
-## Use the auth hooks
+This gives your app one place to start login, track session state, and sign people out.
 
-Import the hooks from `@mvd/auth/react`. No React provider is needed — just pass the `auth` instance to each hook.
+## 2. Show the right screen at the right time
+
+Use `useAuth` to decide what people should see while sign-in is in progress, when they are signed out, and after they are signed in.
 
 ```tsx
-import { useAuth, useAuthRequired } from "@mvd/auth/react";
+import { useAuth } from "@mvd/auth/react";
+import { auth } from "./auth";
 
 function LoginGate() {
   const snapshot = useAuth(auth);
 
-  if (snapshot.status === "loading") return <p>Logging in…</p>;
+  if (snapshot.status === "loading") return <p>Signing you in…</p>;
+
   if (snapshot.status === "unauthenticated") {
     return <button onClick={() => auth.login()}>Log in</button>;
   }
@@ -39,30 +43,32 @@ function LoginGate() {
 }
 ```
 
-## Access the token
+## 3. Use token details where they improve the experience
 
-Use `useAuthRequired` inside a component that is only rendered when the user is authenticated. It throws if auth is in any other state, so guard it with `useAuth` first.
+When someone is already signed in, `useAuthRequired` gives you the authenticated data directly.
 
 ```tsx
+import { useAuthRequired } from "@mvd/auth/react";
+
 function AuthenticatedPanel() {
-  const authenticated = useAuthRequired(auth);
+  const { tokenData } = useAuthRequired(auth);
 
-  return (
-    <>
-      <h4>Access token</h4>
-      <pre>{authenticated.token}</pre>
-
-      <h4>Decoded JWT payload</h4>
-      <pre>{JSON.stringify(authenticated.tokenData, null, 2)}</pre>
-    </>
-  );
+  return <p>Welcome back, {tokenData.name ?? "friend"}.</p>;
 }
 ```
 
-## Log out
+If your access token includes useful claims, you can use them to personalize the UI or choose what to show next.
+
+## 4. Let your callback route load the app normally
+
+After login, your provider sends people back to the `redirectUri` you registered.
+
+Make sure that URL loads your app, and sign-in will continue from there without a special callback page to maintain.
+
+## 5. Give people a clear sign-out action
 
 ```tsx
 <button onClick={() => auth.logout()}>Log out</button>
 ```
 
-`logout()` clears the local auth state. If `logoutEndpoint` is configured, it also navigates the browser to that URL.
+This clears the current session in your app. If you also configured a provider logout URL, people can be sent there too.

@@ -3,36 +3,44 @@ import {
 	DocsDescription,
 	DocsPage,
 	DocsTitle,
-} from "fumadocs-ui/page";
+	MarkdownCopyButton,
+	ViewOptionsPopover,
+} from "fumadocs-ui/layouts/docs/page";
+import { createRelativeLink } from "fumadocs-ui/mdx";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { TOCItemType } from "fumadocs-core/server";
-import type { ComponentType } from "react";
-import { source } from "@/lib/source";
+import { getMDXComponents } from "@/components/mdx";
+import { gitConfig, siteConfig } from "@/lib/layout.shared";
+import { getPageImage, source } from "@/lib/source";
 
-interface MDXPageData {
-	body: ComponentType;
-	toc: TOCItemType[];
-	full?: boolean;
-	title: string;
-	description?: string;
-}
-
-export default async function Page(props: {
-	params: Promise<{ slug?: string[] }>;
-}) {
+export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
 	const params = await props.params;
 	const page = source.getPage(params.slug);
 	if (!page) notFound();
 
-	const data = page.data as unknown as MDXPageData;
-	const MDX = data.body;
+	const MDX = page.data.body;
+	const markdownUrl = `/llms.mdx/docs/${[...page.slugs, "index.mdx"].join("/")}`;
 
 	return (
-		<DocsPage toc={data.toc} full={data.full}>
-			<DocsTitle>{data.title}</DocsTitle>
-			<DocsDescription>{data.description}</DocsDescription>
+		<DocsPage toc={page.data.toc} full={page.data.full}>
+			<DocsTitle>{page.data.title}</DocsTitle>
+			<DocsDescription className="mb-0">
+				{page.data.description}
+			</DocsDescription>
+			<div className="flex flex-row gap-2 items-center border-b pb-6">
+				<MarkdownCopyButton markdownUrl={markdownUrl} />
+				<ViewOptionsPopover
+					markdownUrl={markdownUrl}
+					githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/${siteConfig.docsContentPath}/${page.path}`}
+				/>
+			</div>
 			<DocsBody>
-				<MDX />
+				<MDX
+					components={getMDXComponents({
+						// this allows you to link to other pages with relative file paths
+						a: createRelativeLink(source, page),
+					})}
+				/>
 			</DocsBody>
 		</DocsPage>
 	);
@@ -42,17 +50,18 @@ export async function generateStaticParams() {
 	return source.generateParams();
 }
 
-export async function generateMetadata(props: {
-	params: Promise<{ slug?: string[] }>;
-}) {
+export async function generateMetadata(
+	props: PageProps<"/docs/[[...slug]]">,
+): Promise<Metadata> {
 	const params = await props.params;
 	const page = source.getPage(params.slug);
 	if (!page) notFound();
 
-	const data = page.data as unknown as MDXPageData;
-
 	return {
-		title: data.title,
-		description: data.description,
+		title: page.data.title,
+		description: page.data.description,
+		openGraph: {
+			images: getPageImage(page).url,
+		},
 	};
 }

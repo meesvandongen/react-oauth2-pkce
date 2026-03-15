@@ -1,6 +1,6 @@
 ---
 title: createAuth
-description: Creates and returns an Auth instance.
+description: Create the shared auth object your app uses to sign people in, track session state, and sign them out.
 ---
 
 ## createAuth(config)
@@ -9,7 +9,7 @@ description: Creates and returns an Auth instance.
 import { createAuth } from "@mvd/auth";
 ```
 
-Creates and returns an `Auth` instance. Accepts an [`AuthConfig`](/docs/configuration) object.
+Use `createAuth` to set up the one auth object your app will use for login and session handling.
 
 ```ts
 const auth = createAuth({
@@ -20,41 +20,44 @@ const auth = createAuth({
 });
 ```
 
-### Returns
+## What you get back
 
-An `Auth<AccessTokenData>` instance with the following public surface:
+The returned `auth` object gives you the actions and state you need for the full sign-in journey.
 
-| Member          | Type                                   | Description                          |
-| --------------- | -------------------------------------- | ------------------------------------ |
-| `login(options?)` | `(options?: LoginOptions) => void`  | Start the authorization flow         |
-| `logout()`      | `() => void`                           | Clear auth state and optionally redirect to `logoutEndpoint` |
-| `subscribe`     | `(callback: () => void) => () => void` | Subscribe to state changes (React-compatible) |
-| `getSnapshot`   | `() => AuthSnapshot`                   | Return the current auth snapshot     |
+| Member | Use it when you want to… |
+| ------ | ------------------------ |
+| `login(options?)` | start sign-in |
+| `logout()` | clear the current session |
+| `getSnapshot()` | read the current auth state outside React |
+| `subscribe(callback)` | react to auth state changes in your own integration |
 
-The `Auth` class also extends `TypedEventTarget` and emits the following events:
+## Common usage patterns
 
-| Event                    | Payload                    | Description                                        |
-| ------------------------ | -------------------------- | -------------------------------------------------- |
-| `pre-login`              | —                          | Fired before navigating to the authorization endpoint |
-| `post-login`             | `TokenResponse`            | Fired after a successful token exchange            |
-| `refresh-token-expired`  | `RefreshTokenExpiredEvent` | Fired when the refresh token has expired           |
-| `error`                  | `Error`                    | Fired on unrecoverable errors                      |
-| `state-change`           | `AuthSnapshot`             | Fired on every state transition                    |
-
-### LoginOptions
+### Start sign-in
 
 ```ts
-type LoginOptions = {
-  state?: string;
-  additionalParameters?: Record<string, string | boolean | number>;
-  method?: "redirect" | "replace" | "popup";
-};
+auth.login();
 ```
 
-### TypeScript generic
+### Override the login style for one action
 
 ```ts
-const auth = createAuth<MyTokenPayload>({ ... });
+auth.login({ method: "popup" });
 ```
 
-The type parameter types `tokenData` in `useAuth` and `useAuthRequired`.
+This is useful when most of your app uses redirects, but one button should keep people on the current page.
+
+## Working in TypeScript?
+
+You can pass a token-claim type to `createAuth` so `tokenData` is easier to use throughout your app.
+
+```ts
+const auth = createAuth<MyTokenPayload>({
+  clientId: "my-client-id",
+  authorizationEndpoint: "https://auth.example.com/authorize",
+  tokenEndpoint: "https://auth.example.com/token",
+  redirectUri: window.location.origin,
+});
+```
+
+For the full list of configuration options, see [Configuration](/docs/configuration).

@@ -1,42 +1,79 @@
 ---
 title: Configuration
-description: All configuration options for createAuth.
+description: Choose the settings that shape how people sign in, stay signed in, and return to your app.
 ---
 
-## createAuth(config)
+## Start with the four values every app needs
 
-`createAuth` accepts an `AuthConfig` object. Only `clientId`, `authorizationEndpoint`, `tokenEndpoint`, and `redirectUri` are required.
+`createAuth` needs four required settings:
 
-### Required options
+| Option | What it means for your app |
+| ------ | -------------------------- |
+| `clientId` | Identifies your app to the provider |
+| `authorizationEndpoint` | Where people are sent to sign in |
+| `tokenEndpoint` | Where your app exchanges the sign-in result for tokens |
+| `redirectUri` | Where people return after sign-in |
 
-| Option                   | Type     | Description                                        |
-| ------------------------ | -------- | -------------------------------------------------- |
-| `clientId`               | `string` | OAuth 2.0 client ID                                |
-| `authorizationEndpoint`  | `string` | URL of the authorization endpoint                  |
-| `tokenEndpoint`          | `string` | URL of the token endpoint                          |
-| `redirectUri`            | `string` | Redirect URI registered with your OAuth provider   |
+These are the essentials for a working PKCE flow.
 
-### Optional options
+## Choose how sign-in should feel
 
-| Option                        | Type                                | Default         | Description |
-| ----------------------------- | ----------------------------------- | --------------- | ----------- |
-| `scope`                       | `string`                            | —               | Space-separated list of scopes to request |
-| `state`                       | `string`                            | —               | App-defined round-trip value forwarded to the authorization request. Not used as a security mechanism — PKCE is the protection. |
-| `logoutEndpoint`              | `string`                            | —               | URL to navigate to on logout. Provider-specific. |
-| `loginMethod`                 | `"redirect" \| "replace" \| "popup"` | `"redirect"`   | How to navigate to the authorization endpoint |
-| `autoLogin`                   | `boolean`                           | `true`          | Automatically redirect to login if no token is found on startup |
-| `clearURL`                    | `boolean`                           | `true`          | Remove the `?code=` query parameter from the URL after a successful token exchange |
-| `extraAuthParameters`         | `Record<string, string\|boolean\|number>` | —         | Additional query parameters appended to the authorization URL |
-| `extraTokenParameters`        | `Record<string, string\|boolean\|number>` | —         | Additional parameters appended to the token request body |
-| `tokenExpiresIn`              | `number`                            | —               | Override `expires_in` from the token response (seconds) |
-| `refreshTokenExpiresIn`       | `number`                            | —               | Override the refresh token expiry (seconds) |
-| `refreshTokenExpiryStrategy`  | `"renewable" \| "absolute"`         | `"renewable"`   | `"renewable"` resets the refresh token timer on each refresh; `"absolute"` keeps the original expiry |
-| `storage`                     | `"local" \| "session"`              | `"local"`       | Where to persist auth state |
-| `storageKeyPrefix`            | `string`                            | `"ROCP_"`       | Prefix for storage keys, useful when running multiple auth instances |
-| `refreshWithScope`            | `boolean`                           | `true`          | Include the original scope in refresh token requests |
-| `tokenRequestCredentials`     | `"same-origin" \| "include" \| "omit"` | `"same-origin"` | `credentials` option for the token endpoint `fetch` call |
+Use these options to shape the login experience your users see.
 
-## Example
+| Option | Default | Choose it when you want to… |
+| ------ | ------- | --------------------------- |
+| `scope` | — | ask for specific access, such as API scopes or offline access |
+| `state` | — | round-trip app context, such as where login started |
+| `loginMethod` | `"redirect"` | decide whether login should redirect, replace the current page, or use a popup |
+| `autoLogin` | `true` | send signed-out users to login immediately |
+| `clearURL` | `true` | remove sign-in query parameters from the address bar after login |
+| `extraAuthParameters` | — | pass provider-specific options during login |
+| `logoutEndpoint` | — | send people to a provider logout page when they sign out |
+
+### Good defaults for common products
+
+- Use `autoLogin: true` when your app should always require sign-in.
+- Use `autoLogin: false` when you want a landing page, a pricing page, or a visible “Log in” button.
+- Use `loginMethod: "popup"` when you want to keep people on the current page during sign-in.
+
+## Choose how long sessions should last
+
+These options help you match your provider rules and the experience you want for repeat visitors.
+
+| Option | Default | Choose it when you want to… |
+| ------ | ------- | --------------------------- |
+| `tokenExpiresIn` | — | set or override how long the access token should be treated as valid |
+| `refreshTokenExpiresIn` | — | set or override how long refresh can continue |
+| `refreshTokenExpiryStrategy` | `"renewable"` | decide whether refresh time extends with use or ends at a fixed point |
+| `refreshWithScope` | `true` | resend the original scope during refresh when your provider expects it |
+| `extraTokenParameters` | — | send provider-specific values during token exchange or refresh |
+
+## Choose where session data should live
+
+| Option | Default | Choose it when you want to… |
+| ------ | ------- | --------------------------- |
+| `storage` | `"local"` | keep people signed in across tabs and browser restarts, or limit the session to one tab |
+| `storageKeyPrefix` | `"ROCP_"` | separate sessions when you run more than one auth setup on the same domain |
+| `tokenRequestCredentials` | `"same-origin"` | control whether cookies are sent with token requests |
+
+### Storage guidance
+
+- Use `"local"` when continuity matters more than tab isolation.
+- Use `"session"` when you want the session to end with the tab.
+- Change `storageKeyPrefix` any time you support multiple providers or environments on the same origin.
+
+## The setting that causes the most trouble: `redirectUri`
+
+Your `redirectUri` must exactly match what you registered with your provider.
+
+If sign-in fails unexpectedly, check these first:
+
+- trailing slash differences
+- `http` vs `https`
+- local development port mismatches
+- a callback URL that does not load your app
+
+## Example setup
 
 ```ts
 const auth = createAuth({
@@ -56,28 +93,8 @@ const auth = createAuth({
 });
 ```
 
-## TypeScript: typed access-token payloads
+## Working in TypeScript?
 
-Pass a type parameter to `createAuth` to type the decoded access-token payload:
+You can type the claims you expect in `tokenData` so your editor helps you use them safely in the UI.
 
-```ts
-type AccessClaims = {
-  sub: string;
-  name: string;
-  scope: string;
-};
-
-const auth = createAuth<AccessClaims>({
-  clientId: "my-client-id",
-  authorizationEndpoint: "https://auth.example.com/authorize",
-  tokenEndpoint: "https://auth.example.com/token",
-  redirectUri: window.location.origin,
-});
-```
-
-The type flows through to `useAuth` and `useAuthRequired`:
-
-```ts
-const authenticated = useAuthRequired(auth);
-authenticated.tokenData.name; // typed as string
-```
+See [Typed Token Payloads](/docs/guides/typed-tokens) for a practical example.

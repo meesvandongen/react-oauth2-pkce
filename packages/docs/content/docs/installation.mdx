@@ -1,9 +1,9 @@
 ---
 title: Installation
-description: How to install @mvd/auth in your project.
+description: Install @mvd/auth, gather the provider details you need, and choose the entry point that fits your app.
 ---
 
-## Install
+## Install the package
 
 ```bash
 npm install @mvd/auth
@@ -17,23 +17,28 @@ pnpm add @mvd/auth
 yarn add @mvd/auth
 ```
 
-## Peer dependencies
+## Use it in browser apps
 
-`react` is a peer dependency when using the React hooks from `@mvd/auth/react`. It is optional — the core `createAuth` function works without React.
+`@mvd/auth` is built for apps that run in the browser.
 
-```json
-{
-  "peerDependencies": {
-    "react": ">=16.8.0"
-  }
-}
-```
+If your framework renders on the server, keep your auth setup inside client-only code so sign-in runs where your users interact with it.
 
-## Imports
+## Bring these details from your provider
 
-The package exports two entry points:
+Before you start, make sure you have:
 
-| Entry point      | Contents                                  |
-| ---------------- | ----------------------------------------- |
-| `@mvd/auth`      | `createAuth`, types, `FetchError`         |
-| `@mvd/auth/react`| `useAuth`, `useAuthRequired`              |
+- A client ID
+- An authorization endpoint URL
+- A token endpoint URL
+- A redirect URI registered with your provider
+
+Those four values are enough to get your first sign-in flow working.
+
+## Choose the entry point that matches your app
+
+| Entry point       | Choose it when you want to… |
+| ----------------- | --------------------------- |
+| `@mvd/auth`       | create and manage auth from plain browser code |
+| `@mvd/auth/react` | read auth state directly inside React components |
+
+If you use the React hooks, install `react` in your app as usual.

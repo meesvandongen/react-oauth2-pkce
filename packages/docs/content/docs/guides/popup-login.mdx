@@ -1,11 +1,22 @@
 ---
 title: Popup Login
-description: Open the authorization endpoint in a popup window.
+description: Keep people on the current page while they sign in through a popup.
 ---
 
-## Popup login
+## When popup login is the better experience
 
-Pass `method: "popup"` to `auth.login()` to open the authorization endpoint in a popup window instead of navigating the current page.
+Popup login works well when you want people to stay on the page they were using instead of being redirected away.
+
+That is often useful for:
+
+- dashboards with unsaved work
+- embedded tools
+- admin consoles
+- flows where people need to compare information before signing in
+
+## Start popup login from a button
+
+The most reliable way to open a popup is from a direct user action.
 
 ```tsx
 <button onClick={() => auth.login({ method: "popup" })}>
@@ -13,11 +24,9 @@ Pass `method: "popup"` to `auth.login()` to open the authorization endpoint in a
 </button>
 ```
 
-The popup completes the authorization code exchange and then closes itself. The parent window receives the token via the shared storage event.
+## Make popup your default choice
 
-### Make popup the default
-
-Set `loginMethod: "popup"` in `createAuth` to use popup login for all `auth.login()` calls that do not specify a method:
+If popup login is the main experience you want, set it once in your auth configuration.
 
 ```ts
 const auth = createAuth({
@@ -29,16 +38,20 @@ const auth = createAuth({
 });
 ```
 
-### Popup blockers
+## Plan for blocked popups
 
-If the browser's popup blocker prevents the popup from opening, the library falls back to a redirect-based login automatically and logs a console warning:
+Some browsers or browser settings will block popups.
 
-```
-Popup blocked. Redirecting to login page.
-Disable popup blocker to use popup login.
-```
+For the smoothest experience:
 
-### Notes
+- keep `autoLogin` off
+- show a clear login button
+- make sure a redirect-based login still feels acceptable as a fallback
 
-- The `redirectUri` must still be registered with your OAuth provider and must point to a page that loads your app (so the token exchange can run in the popup).
-- `autoLogin: true` with `loginMethod: "popup"` will open a popup on page load, which most browsers will block. Prefer `autoLogin: false` when using popup login.
+## Before you ship
+
+- Confirm your `redirectUri` is registered with your provider.
+- Make sure that URL loads your app after sign-in.
+- Test the flow in the browsers your customers actually use.
+
+When popup login works well, it feels faster and less disruptive because people never lose the context of the page they started from.

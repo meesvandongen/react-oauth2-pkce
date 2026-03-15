@@ -1,17 +1,26 @@
-import { docs } from "@/.source";
-import { loader } from "fumadocs-core/source";
-import type { Source } from "fumadocs-core/source";
+import { docs } from 'collections/server';
+import { type InferPageType, loader } from 'fumadocs-core/source';
 
-// fumadocs-mdx v11 lazily wraps `files` in a function; unwrap it for fumadocs-core v15.
-function resolveSource(raw: Source): Source {
-	const { files } = raw as { files: unknown };
-	if (typeof files === "function") {
-		return { ...raw, files: (files as () => unknown[])() as Source["files"] };
-	}
-	return raw;
+// See https://fumadocs.dev/docs/headless/source-api for more info
+export const source = loader({
+  baseUrl: '/docs',
+  source: docs.toFumadocsSource(),
+  plugins: [],
+});
+
+export function getPageImage(page: InferPageType<typeof source>) {
+  const segments = [...page.slugs, 'image.webp'];
+
+  return {
+    segments,
+    url: `/og/docs/${segments.join('/')}`,
+  };
 }
 
-export const source = loader({
-	baseUrl: "/docs",
-	source: resolveSource(docs.toFumadocsSource()),
-});
+export async function getLLMText(page: InferPageType<typeof source>) {
+  const processed = await page.data.getText('processed');
+
+  return `# ${page.data.title}
+
+${processed}`;
+}
