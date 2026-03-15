@@ -29,6 +29,8 @@ const redirectUri =
 	window.location.pathname +
 	(search ? `?${search}` : "");
 
+const opaqueAccessToken = searchParams.get("opaqueAccessToken") === "true";
+
 const store = createAuth({
 	clientId: "test-app",
 	authorizationEndpoint: "http://localhost:5556/idp/auth",
@@ -60,6 +62,7 @@ const store = createAuth({
 		searchParams.get("extraParams") === "true"
 			? { custom_token_param: "custom_token_param" }
 			: undefined,
+	opaqueAccessToken,
 });
 
 store.addEventListener("pre-login", () => {

@@ -47,4 +47,26 @@ describe("useAuthRequired (authenticated hook)", () => {
 		expect(screen.getByTestId("name").textContent).toBe("John Doe");
 		expect(screen.getByTestId("sub").textContent).toBe("1234567890");
 	});
+
+	test("returns authenticated snapshot for opaque access tokens when enabled", () => {
+		localStorage.setItem("ROCP_token", JSON.stringify("opaque-access-token"));
+		localStorage.setItem("ROCP_tokenExpire", JSON.stringify(9999999999));
+
+		const auth = createAuth({
+			autoLogin: false,
+			clientId: "myClientID",
+			authorizationEndpoint: "myAuthEndpoint",
+			tokenEndpoint: "myTokenEndpoint",
+			redirectUri: "http://localhost/",
+			opaqueAccessToken: true,
+		});
+
+		const StrictConsumer = () => {
+			const authenticated = useAuthRequired(auth);
+			return <div data-testid="token">{authenticated.token}</div>;
+		};
+
+		render(<StrictConsumer />);
+		expect(screen.getByTestId("token").textContent).toBe("opaque-access-token");
+	});
 });

@@ -1,5 +1,5 @@
 import { Auth } from "@mvd/auth";
-import { useAuth, useAuthRequired } from "@mvd/auth/react";
+import { useAuth } from "@mvd/auth/react";
 import { useEffect, useState } from "react";
 
 interface AuthStatusPanelProps {
@@ -34,17 +34,33 @@ export function AuthStatusPanel({ store, children }: AuthStatusPanelProps) {
 }
 
 function AuthTokenDetailsAuthenticated({ store }: AuthStatusPanelProps) {
-	const auth = useAuthRequired(store);
+	const snapshot = useAuth(store);
+	if (snapshot.status !== "authenticated") {
+		return null;
+	}
+
+	const hasTokenData = "tokenData" in snapshot;
 
 	return (
 		<div style={{ marginTop: "20px" }}>
 			<h3>Access Token</h3>
-			<pre data-testid="access-token">{auth.token}</pre>
+			<pre data-testid="access-token">{snapshot.token}</pre>
 
-			<h3>Decoded Token Data</h3>
-			<pre data-testid="token-data">
-				{JSON.stringify(auth.tokenData, null, 2)}
-			</pre>
+			{hasTokenData ? (
+				<>
+					<h3>Decoded Token Data</h3>
+					<pre data-testid="token-data">
+						{JSON.stringify(snapshot.tokenData, null, 2)}
+					</pre>
+				</>
+			) : (
+				<>
+					<h3>Decoded Token Data</h3>
+					<pre data-testid="token-data-unavailable">
+						Opaque access token configured; decoded token data unavailable.
+					</pre>
+				</>
+			)}
 		</div>
 	);
 }

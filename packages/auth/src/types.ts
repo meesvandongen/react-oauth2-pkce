@@ -74,8 +74,16 @@ type BaseAuthConfig = {
 	tokenRequestCredentials?: RequestCredentials;
 };
 
-export type AuthConfig<AccessTokenData extends TokenData = TokenData> =
-	BaseAuthConfig;
+export type AuthConfig<
+	AccessTokenData extends TokenData = TokenData,
+	OpaqueAccessToken extends boolean = false,
+> = BaseAuthConfig & {
+	/**
+	 * Set to true when the OAuth provider returns opaque access tokens instead of JWTs.
+	 * When enabled, authenticated snapshots expose only the raw token.
+	 */
+	opaqueAccessToken?: OpaqueAccessToken;
+};
 
 export type RefreshTokenExpiredEvent = {
 	login: (options?: LoginOptions) => void;
@@ -92,7 +100,9 @@ export type InternalConfig = WithRequired<
 	| "storageKeyPrefix"
 	| "refreshWithScope"
 	| "tokenRequestCredentials"
->;
+> & {
+	opaqueAccessToken: boolean;
+};
 
 export type InternalState = {
 	token?: string;
@@ -122,16 +132,24 @@ export type AuthAuthenticatedSnapshot =
 
 export type AuthAuthenticatedSnapshotTyped<
 	AccessTokenData extends TokenData = TokenData,
+	OpaqueAccessToken extends boolean = false,
 > = AuthSnapshotBase & {
 	status: "authenticated";
 	token: string;
-	tokenData: AccessTokenData;
-};
+} & (OpaqueAccessToken extends true ? object : { tokenData: AccessTokenData });
 
-export type AuthSnapshot<AccessTokenData extends TokenData = TokenData> =
+export type AuthAuthenticatedOpaqueSnapshot = AuthAuthenticatedSnapshotTyped<
+	TokenData,
+	true
+>;
+
+export type AuthSnapshot<
+	AccessTokenData extends TokenData = TokenData,
+	OpaqueAccessToken extends boolean = false,
+> =
 	| AuthLoadingSnapshot
 	| AuthUnauthenticatedSnapshot
-	| AuthAuthenticatedSnapshotTyped<AccessTokenData>;
+	| AuthAuthenticatedSnapshotTyped<AccessTokenData, OpaqueAccessToken>;
 
 export type LoginOptions = {
 	/**

@@ -9,6 +9,7 @@ const authConfig: InternalConfig = {
 	clientId: "myClientID",
 	authorizationEndpoint: "myAuthEndpoint",
 	tokenEndpoint: "myTokenEndpoint",
+	opaqueAccessToken: false,
 	redirectUri: "http://localhost:5173/",
 	scope: "someScope",
 	clearURL: false,

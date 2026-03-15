@@ -33,12 +33,15 @@ import type {
 	TokenResponse,
 } from "./types";
 
-type AuthEventMap<AccessTokenData extends TokenData> = {
+type AuthEventMap<
+	AccessTokenData extends TokenData,
+	OpaqueAccessToken extends boolean = false,
+> = {
 	"pre-login": undefined;
 	"post-login": TokenResponse;
 	"refresh-token-expired": RefreshTokenExpiredEvent;
 	error: Error;
-	"state-change": AuthSnapshot<AccessTokenData>;
+	"state-change": AuthSnapshot<AccessTokenData, OpaqueAccessToken>;
 };
 
 const PERSISTED_KEYS = [
@@ -73,22 +76,26 @@ function parseStoredValue<T>(value: string | null, fallback: T): T {
 	}
 }
 
-export function createAuth<AccessTokenData extends TokenData = TokenData>(
-	authConfig: AuthConfig<AccessTokenData>,
-): Auth<AccessTokenData> {
+export function createAuth<
+	AccessTokenData extends TokenData = TokenData,
+	OpaqueAccessToken extends boolean = false,
+>(
+	authConfig: AuthConfig<AccessTokenData, OpaqueAccessToken>,
+): Auth<AccessTokenData, OpaqueAccessToken> {
 	return new Auth(authConfig);
 }
 
 export class Auth<
 	AccessTokenData extends TokenData = TokenData,
-> extends TypedEventTarget<AuthEventMap<AccessTokenData>> {
+	OpaqueAccessToken extends boolean = false,
+> extends TypedEventTarget<AuthEventMap<AccessTokenData, OpaqueAccessToken>> {
 	#storage: Storage;
 	#state: InternalState;
-	#snapshot: AuthSnapshot<AccessTokenData>;
+	#snapshot: AuthSnapshot<AccessTokenData, OpaqueAccessToken>;
 	#didFetchTokens = false;
 	readonly #config: InternalConfig;
 
-	constructor(authConfig: AuthConfig<AccessTokenData>) {
+	constructor(authConfig: AuthConfig<AccessTokenData, OpaqueAccessToken>) {
 		super();
 		this.#config = createInternalConfig(authConfig);
 		this.#storage =
@@ -207,7 +214,9 @@ export class Auth<
 		);
 	}
 
-	#computeSnapshot(state: InternalState): AuthSnapshot<AccessTokenData> {
+	#computeSnapshot(
+		state: InternalState,
+	): AuthSnapshot<AccessTokenData, OpaqueAccessToken> {
 		if (state.loginInProgress) {
 			return {
 				status: "loading",
@@ -220,6 +229,14 @@ export class Auth<
 				status: "unauthenticated",
 				error: state.error,
 			};
+		}
+
+		if (this.#config.opaqueAccessToken) {
+			return {
+				status: "authenticated",
+				error: state.error,
+				token: state.token,
+			} as AuthAuthenticatedSnapshotTyped<AccessTokenData, OpaqueAccessToken>;
 		}
 
 		const tokenData = decodeAccessToken(state.token) as AccessTokenData;
@@ -252,11 +269,13 @@ export class Auth<
 
 	#handleTokenResponse(response: TokenResponse) {
 		let tokenExp = FALLBACK_EXPIRE_TIME;
-		try {
-			const decodedToken = decodeJWT(response.access_token);
-			tokenExp = Math.round(Number(decodedToken.exp) - Date.now() / 1000);
-		} catch (e) {
-			console.warn(`Failed to decode access token: ${(e as Error).message}`);
+		if (!this.#config.opaqueAccessToken) {
+			try {
+				const decodedToken = decodeJWT(response.access_token);
+				tokenExp = Math.round(Number(decodedToken.exp) - Date.now() / 1000);
+			} catch (e) {
+				console.warn(`Failed to decode access token: ${(e as Error).message}`);
+			}
 		}
 
 		const tokenExpiresIn =

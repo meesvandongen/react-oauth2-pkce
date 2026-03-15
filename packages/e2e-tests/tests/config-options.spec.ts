@@ -75,6 +75,22 @@ test("uses manual expiry overrides", async ({ page, oauth }) => {
 	await expect(page.getByTestId("access-token")).not.toHaveText(initialToken!);
 });
 
+test("supports opaque access tokens without decoded token data", async ({
+	page,
+}) => {
+	await page.goto("/configurable?opaqueAccessToken=true");
+	await login(page);
+	await expectAuthenticated(page);
+
+	await expect(page.getByTestId("access-token")).toBeVisible();
+	await expect(page.getByTestId("access-token")).toHaveText(/^at_/);
+	await expect(page.getByTestId("token-data")).toHaveCount(0);
+	await expect(page.getByTestId("token-data-unavailable")).toHaveText(
+		"Opaque access token configured; decoded token data unavailable.",
+	);
+	await expect(page.getByTestId("auth-error")).toHaveCount(0);
+});
+
 test("respects absolute refreshTokenExpiryStrategy", async ({
 	page,
 	oauth,

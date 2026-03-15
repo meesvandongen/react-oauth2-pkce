@@ -7,12 +7,16 @@ function stringIsUnset(value: string | null | undefined) {
 
 export function createInternalConfig<
 	AccessTokenData extends import("./types").TokenData,
->(passedConfig: AuthConfig<AccessTokenData>): InternalConfig {
+	OpaqueAccessToken extends boolean = false,
+>(
+	passedConfig: AuthConfig<AccessTokenData, OpaqueAccessToken>,
+): InternalConfig {
 	const config = {
 		autoLogin: true,
 		clearURL: true,
 		scope: undefined,
 		loginMethod: "redirect",
+		opaqueAccessToken: false,
 		storage: "local",
 		storageKeyPrefix: "ROCP_",
 		refreshWithScope: true,

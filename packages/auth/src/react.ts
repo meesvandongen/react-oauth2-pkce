@@ -10,9 +10,12 @@ import type {
  * Returns full auth state (loading | unauthenticated | authenticated).
  * Consumers can call this hook directly; no React provider is needed.
  */
-export function useAuth<AccessTokenData extends TokenData>(
-	auth: Auth<AccessTokenData>,
-): AuthSnapshot<AccessTokenData> {
+export function useAuth<
+	AccessTokenData extends TokenData,
+	OpaqueAccessToken extends boolean = false,
+>(
+	auth: Auth<AccessTokenData, OpaqueAccessToken>,
+): AuthSnapshot<AccessTokenData, OpaqueAccessToken> {
 	return useSyncExternalStore(auth.subscribe, auth.getSnapshot);
 }
 
@@ -20,12 +23,18 @@ export function useAuth<AccessTokenData extends TokenData>(
  * Returns only the authenticated snapshot.
  * Throws if auth is currently loading or unauthenticated.
  */
-export function useAuthRequired<AccessTokenData extends TokenData>(
-	auth: Auth<AccessTokenData>,
-): AuthAuthenticatedSnapshotTyped<AccessTokenData>;
-export function useAuthRequired<AccessTokenData extends TokenData>(
-	auth: Auth<AccessTokenData>,
-): AuthAuthenticatedSnapshotTyped<AccessTokenData> {
+export function useAuthRequired<
+	AccessTokenData extends TokenData,
+	OpaqueAccessToken extends boolean = false,
+>(
+	auth: Auth<AccessTokenData, OpaqueAccessToken>,
+): AuthAuthenticatedSnapshotTyped<AccessTokenData, OpaqueAccessToken>;
+export function useAuthRequired<
+	AccessTokenData extends TokenData,
+	OpaqueAccessToken extends boolean = false,
+>(
+	auth: Auth<AccessTokenData, OpaqueAccessToken>,
+): AuthAuthenticatedSnapshotTyped<AccessTokenData, OpaqueAccessToken> {
 	const snapshot = useAuth(auth);
 	if (snapshot.status !== "authenticated") {
 		throw new Error(

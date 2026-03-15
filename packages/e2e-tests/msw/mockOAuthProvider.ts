@@ -384,7 +384,9 @@ export class MockOAuthProvider {
 			Object.assign(accessPayload, extra);
 		}
 
-		const access_token = this.createJwt(accessPayload);
+		const access_token = this.shouldIssueOpaqueAccessToken(authContext)
+			? this.createOpaqueAccessToken()
+			: this.createJwt(accessPayload);
 
 		let refresh_token: string | undefined;
 		if (scope.includes("offline_access")) {
@@ -434,6 +436,24 @@ export class MockOAuthProvider {
 	private createJwt(payload: Record<string, unknown>) {
 		const header = { alg: "HS256", typ: "JWT", kid: "mock-key" };
 		return `${this.base64UrlEncode(header)}.${this.base64UrlEncode(payload)}.mock-signature`;
+	}
+
+	private createOpaqueAccessToken() {
+		return `at_${randomBytes(24).toString("hex")}`;
+	}
+
+	private shouldIssueOpaqueAccessToken(
+		authContext: AuthorizationRequestContext,
+	) {
+		try {
+			return (
+				new URL(authContext.redirectUri).searchParams.get(
+					"opaqueAccessToken",
+				) === "true"
+			);
+		} catch {
+			return false;
+		}
 	}
 
 	private base64UrlEncode(input: Record<string, unknown>) {
